@@ -1,9 +1,11 @@
 import numpy as np 
 import pandas as pd 
-import sys, os
+import sys, os, copy
 from sklearn.neural_network import MLPClassifier
 # from sklearn.datasets import make_classification
 from sklearn.model_selection import train_test_split
+import random
+
 
 """
 __Args__:
@@ -53,8 +55,8 @@ class environment:
 		self.P1 = np.zeros((self.nS, self.nA))
 		self.P = [[0 for i in range(self.nA)] for j in range(self.nS)]
 		# import ipdb; ipdb.set_trace()
-		self.action_map = {'a1': 0, 'a2': 1, 'b1': 2, 'b2': 3, 'c1': 4, 'c2': 5}
-		self.reverse_action_map = {0: 'a1', 1: 'a2', 2: 'b1', 3: 'b2', 4: 'c1', 5: 'c2'}
+		self.action_map = {'a1': 0, 'a2': 1, 'b1': 2, 'b2': 3, 'c1': 4} #, 'c2': 5}
+		self.reverse_action_map = {0: 'a1', 1: 'a2', 2: 'b1', 3: 'b2', 4: 'c1'} #, 5: 'c2'}
 		# state_sequence = 1 * a + 10 * b + 100 * c
 
 		for a in range(5):
@@ -64,27 +66,28 @@ class environment:
 					if a <= 3:
 						self.P[present_state][self.action_map['a1']] = [(1.0, self.state_sequence(a+1, b, c), self.model(a+1, b, c) - self.model(a, b, c) - 1, None)]
 					else:
-						self.P[present_state][self.action_map['a1']] = [(1.0, present_state, -1, None)]
+						self.P[present_state][self.action_map['a1']] = [(1.0, present_state, -2, None)]
 					if a >= 1:
 						self.P[present_state][self.action_map['a2']] = [(1.0, self.state_sequence(a-1, b, c), self.model(a-1, b, c) - self.model(a, b, c) - 1, None)]
 					else:
-						self.P[present_state][self.action_map['a2']] = [(1.0, present_state, -1, None)]
+						self.P[present_state][self.action_map['a2']] = [(1.0, present_state, -2, None)]
 					if b <= 3:
 						self.P[present_state][self.action_map['b1']] = [(1.0, self.state_sequence(a, b+1, c), self.model(a, b+1, c) - self.model(a, b, c) - 1, None)]
 					else:
-						self.P[present_state][self.action_map['b1']] = [(1.0, present_state, -1, None)]
+						self.P[present_state][self.action_map['b1']] = [(1.0, present_state, -2, None)]		# 5 times the negative reward to try to violate boundary condition
 					if b >= 1:
 						self.P[present_state][self.action_map['b2']] = [(1.0, self.state_sequence(a, b-1, c), self.model(a, b-1, c) - self.model(a, b, c) - 1, None)]
 					else:
-						self.P[present_state][self.action_map['b2']] = [(1.0, present_state, -1, None)]
+						self.P[present_state][self.action_map['b2']] = [(1.0, present_state, -2, None)]
 					if c <= 3:
 						self.P[present_state][self.action_map['c1']] = [(1.0, self.state_sequence(a, b, c+1), self.model(a, b, c+1) - self.model(a, b, c) - 1, None)]
 					else:
-						self.P[present_state][self.action_map['c1']] = [(1.0, present_state, -1, None)]
-					if c >= 1:
-						self.P[present_state][self.action_map['c2']] = [(1.0, self.state_sequence(a, b, c-1), self.model(a, b, c-1) - self.model(a, b, c) - 1, None)]
-					else:
-						self.P[present_state][self.action_map['c2']] = [(1.0, present_state, -1, None)]
+						self.P[present_state][self.action_map['c1']] = [(1.0, present_state, -2, None)]
+					# no more action c2
+					# if c >= 1:
+					# 	self.P[present_state][self.action_map['c2']] = [(1.0, self.state_sequence(a, b, c-1), self.model(a, b, c-1) - self.model(a, b, c) - 1, None)]
+					# else:
+					# 	self.P[present_state][self.action_map['c2']] = [(1.0, present_state, -2, None)]
 					# print(a, b, c, "hello")
 		# print("done")
 
@@ -98,9 +101,9 @@ class environment:
 	
 	
 	def model(self, x, y, z):
-		return self.classifier.predict_proba(np.array([x,y,x]).reshape(1,-1))[0][1]		# find the probability of belonging to class 1
+		return self.classifier.predict_proba(np.array([x,y,z]).reshape(1,-1))[0][1]		# find the probability of belonging to class 1 - 
+		# There was a major bug in this line, instead of x,y,z, I had written x,y,x. 
 				
-
 
 def policy_eval(policy, env, discount_factor=1.0, theta=0.00001, max_iterations=1000):
     # Initialize the value function
@@ -165,18 +168,36 @@ def policy_improvement(env, policy_eval_fn=policy_eval, discount_factor=1.0):
             return policy, V
 
 
-def create_synthetic_data():
+def create_synthetic_data(file):
 	def sigmoid(x):
 		return 1 / (1 + np.exp(-x))
 
+	def age_finder(educational):
+		for i, j in enumerate(educational):		# not able to find a vectorized version
+			if j == 0:
+				educational[i] = random.choice([0, 1, 2])
+			elif j == 1:
+				educational[i] = random.choice([1, 2])
+			elif j == 2:
+				educational[i] = random.choice([2, 3])
+			elif j == 3:
+				educational[i] = random.choice([2, 3])
+			elif j == 4:
+				educational[i] = random.choice([3, 4])
+		
+		return educational
+	
+	# import ipdb; ipdb.set_trace()
+	# Now generate data where features have meanings: b is educational qualification and c is age. So there is a correlation between them. Feature a is still random. 
 	graph_nodes_count = 4
 	a = np.random.randint(0, 5, 100)
 	b = np.random.randint(0, 5, 100)
-	c = np.random.randint(0, 5, 100)
-	# x1 = np.random.normal(50, 15, 1000)
-	# x2 = np.random.normal(50, 17, 1000)
-	# x3 = 10*((x1+x2)**2/180**2) + 10 + np.random.normal(0,0.5,1000)
-	y = sigmoid( (a * b) - (a * c) - 0.02)
+	# c = np.random.randint(0, 5, 100)
+	# now age will be correlated with educational qualification. 
+	c = age_finder(copy.deepcopy(b))
+	# for x,y,z, in zip(a,b,c):
+	# 	print( ((x * x) - (y * z) ), sigmoid( (x * x) - (y * z)) )
+	y = sigmoid( (a * a) - (b * c))		# changed the function, now we have almost a balanced dataset. 
 
 	graph_data = np.zeros( (a.shape[0], graph_nodes_count), dtype=np.int64  )
 	graph_data[:, 0] = a
@@ -189,7 +210,7 @@ def create_synthetic_data():
 		else:
 			graph_data[i, 3] = 0        
 	graph_data = pd.DataFrame(graph_data, columns=['a', 'b', 'c', 'y'] )
-	graph_data.to_csv('synthetic.csv', index=False)
+	graph_data.to_csv(file, index=False)
 
 
 def train_model():
@@ -220,8 +241,38 @@ def use_policy(policy, classifier, env):
 		elif action == "c1" and c <= 3:
 			return (a, b, c+1)
 		elif action == "c2" and c >= 1:
+			raise NotImplementedError 		# c2 is not more a valid action
 			return (a, b, c-1)
 	
+	
+	def return_counterfactual(original_individual, transit):
+		cost = 0
+		individual = copy.deepcopy(original_individual)
+		number = env.state_sequence(*individual)
+		maxtry = 30
+		attempt_no = 0
+		while attempt_no < maxtry:
+			action_ = np.where(policy[number] == 1)[0]
+			assert len(action_) == 1
+			action = env.reverse_action_map[action_[0]]
+			new_pt = np.array(take_action(*individual, action))
+			cost += 1
+			attempt_no += 1
+			if classifier.predict(new_pt.reshape(1, -1)) == 1:
+				transit += 1
+				print(original_individual, f"successful: {new_pt}",  cost)
+				# total_cost += cost
+				return transit, cost
+			else:
+				number = env.state_sequence(*new_pt)
+				if (new_pt == individual).all():
+					print("unsuccessful: ", original_individual)
+					return transit, cost
+				individual = new_pt
+		else:
+			print("unsuccessful: ", original_individual)
+			return transit, cost
+
 
 	total_dataset = pd.read_csv("synthetic.csv")
 	Y = total_dataset['y']
@@ -230,25 +281,11 @@ def use_policy(policy, classifier, env):
 	undesirable_x = X_test[y_test == 0].to_numpy()
 	successful_transitions = 0
 	total_cost = 0
-	for individual in undesirable_x:
-		cost = 0
-		number = env.state_sequence(*individual)
-		while True:
-			action_ = np.where(policy[number] == 1)[0]
-			assert len(action_) == 1
-			action = env.reverse_action_map[action_[0]]
-			new_pt = np.array(take_action(*individual, action))
-			cost += 1
-			if classifier.predict(new_pt.reshape(1, -1)) == 1:
-				successful_transitions += 1
-				print(new_pt, "successful", cost)
-				total_cost += cost
-				break
-			else:
-				number = env.state_sequence(*new_pt)
-				if (new_pt == individual).all():
-					break
-				individual = new_pt
+	for no_, individual in enumerate(undesirable_x):
+		transit, cost = return_counterfactual(individual, successful_transitions)
+		if transit > successful_transitions:
+			successful_transitions = transit
+			total_cost += cost
 
 	avg_cost = total_cost / successful_transitions
 	print(successful_transitions, len(undesirable_x), avg_cost)			
@@ -257,13 +294,15 @@ def use_policy(policy, classifier, env):
 
 
 if __name__ == "__main__":
-	if not os.path.exists("synthetic.csv"):
-		create_synthetic_data()
+	file = "synthetic2.csv"
+	if not os.path.exists(file):
+		create_synthetic_data(file)
+		exit(0)
 	clf = train_model()
-	n_actions = 6 		# choose a state, increment a state value by 1 or decrement by 1, 3*2 = 6 actions
+	n_actions = 5 		# choose a state, increment a state value by 1 or decrement by 1, 3*2 = 6 actions, except that now age can't decrease. 
 	n_states = 125 		# 5 values, each for the 3 states, 5*5*5 = 125. 
 	env = environment(n_states, n_actions, clf)
 	# import ipdb; ipdb.set_trace()
-	final_policy, V = policy_improvement(env, discount_factor=1.0)
+	final_policy, V = policy_improvement(env, discount_factor=0.9)
 	use_policy(final_policy, clf, env)
 	print("DONE")

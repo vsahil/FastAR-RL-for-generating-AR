@@ -517,9 +517,12 @@ episodes = 201
 
 experiment = True
 if experiment:
-    for closest_points in [1, 2, 5, 10]:
-        for dist_lambda in [0.01, 0.1, 1, 10, 100, 1000]:
-            learn(n_actions, clf, X_train, closest_points, dist_lambda, episodes, gamma, learning_rate, file)
+    # for closest_points in [1, 2, 5, 10]:
+    #     for dist_lambda in [0.01, 0.1, 1, 10, 100, 1000]:
+    closest_points = int(sys.argv[1])
+    dist_lambda = float(sys.argv[2])
+    print(closest_points, dist_lambda)
+    learn(n_actions, clf, X_train, closest_points, dist_lambda, episodes, gamma, learning_rate, file)
 else:
     learn(n_actions, clf, X_train, closest_points, dist_lambda, episodes, gamma, learning_rate, file)
 

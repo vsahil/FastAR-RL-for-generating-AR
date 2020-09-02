@@ -17,10 +17,12 @@ from torch.distributions import Categorical
 # %matplotlib inline
 torch.manual_seed(1)
 
+# This has non-deterministic actions - because we sample from probability. 
+
 
 class environment:
-    def __init__(self, n_actions, clf, X_train=None, closest_points=None, dist_lambda=0):
-        self.observation_space = np.zeros([3])  # just created for shape[0] = 3
+    def __init__(self, n_actions, clf, X_train=None, closest_points=None, dist_lambda=0, file=None):
+        self.observation_space = np.zeros([X_train.shape[1]])  # just created for shape[0] = 3
         self.action_space = n_actions
         # self.action_space.n = n_actions
         # self.nS = n_states
@@ -29,101 +31,154 @@ class environment:
         # self.states = {}
         self.state_count = 0
         self.X_train = X_train
-        self.previous_state = np.zeros([3])
-        self.current_state = np.zeros([3])  # we will update this as the agent explores
-        self.no_points = closest_points
+        self.previous_state = np.zeros([X_train.shape[1]])
+        self.current_state = np.zeros([X_train.shape[1]])  # we will update this as the agent explores
+        self.no_points = closest_points         # when this is None, it defaults to 5.
         self.dist_lambda = dist_lambda
+        if file:
+            self.total_dataset = pd.read_csv(file)
         # self.P1 = np.zeros((self.nS, self.nA))
         # self.P = [[0 for i in range(self.nA)] for j in range(self.nS)]
         # import ipdb; ipdb.set_trace()
         # self.action_map = {'a1': 0, 'a2': 1, 'b1': 2, 'b2': 3, 'c1': 4} #, 'c2': 5}
         # self.reverse_action_map = {0: 'a1', 1: 'a2', 2: 'b1', 3: 'b2', 4: 'c1'} #, 5: 'c2'}
-        self.reverse_action_map = {0: 'a1', 1: 'a2', 2: 'b1', 3: 'c1'} #, 4: 'c1'} #, 5: 'c2'}
-        self.action_map = {'a1': 0, 'a2': 1, 'b1': 2, 'c1': 3} #, 'c1': 4} #, 'c2': 5}
-        # state_sequence = 1 * a + 10 * b + 100 * c
+        # self.reverse_action_map = {0: 'a1', 1: 'a2', 2: 'b1', 3: 'c1'} #, 4: 'c1'} #, 5: 'c2'}
+        # self.action_map = {'a1': 0, 'a2': 1, 'b1': 2, 'c1': 3} #, 'c1': 4} #, 'c2': 5}
 
-        # Let's do Knn only on the second and third feature because first is random
+        self.reverse_action_map = {0: 'n', 1: 's', 2: 'e', 3: 'w'}
+        self.action_map = {'n': 0, 's': 1, 'e': 2, 'w': 3}
+
+        # Let's do Knn only on the second and third feature because first is random - no dropping in the snake dataset
         self.knn = NearestNeighbors(n_neighbors=6, p=2)	# 1 would be self
-        self.knn.fit(self.X_train.drop(columns = ['a']))
+        # self.knn.fit(self.X_train.drop(columns = ['a']))
+        self.knn.fit(self.X_train)
         # import ipdb; ipdb.set_trace()
 
+    # def step(self, action):
+    #     a, b, c = self.current_state
+    #     self.previous_state = copy.deepcopy(self.current_state)
+    #     if self.reverse_action_map[action] == 'a1':
+    #         if a <= 3:
+    #             # self.P[present_state][self.action_map['a1']] = [(1.0, self.state_sequence(a+1, b, c), self.model(a+1, b, c) - self.model(a, b, c) - 1 - self.dist_lambda * self.distance_to_closest_k_points(a+1, b, c), None)]
+    #             self.current_state = np.array([a+1, b, c])
+    #             done = self.prediction(self.current_state)
+    #             # return self.current_state, self.model(self.current_state) - self.model(a, b, c) - 1 - self.dist_lambda * self.distance_to_closest_k_points(self.current_state), done
+    #         else:
+    #             # self.P[present_state][self.action_map['a1']] = [(1.0, present_state, -10, None)]
+    #             done = self.prediction(self.current_state)
+    #             return self.current_state, -10, done, None
+    #     if self.reverse_action_map[action] == 'a2':
+    #         if a >= 1:
+    #             # self.P[present_state][self.action_map['a2']] = [(1.0, self.state_sequence(a-1, b, c), self.model(a-1, b, c) - self.model(a, b, c) - 1 - self.dist_lambda * self.distance_to_closest_k_points(a-1, b, c), None)]
+    #             self.current_state = np.array([a-1, b, c])
+    #             done = self.prediction(self.current_state)
+    #         else:
+    #             # self.P[present_state][self.action_map['a2']] = [(1.0, present_state, -10, None)]
+    #             done = self.prediction(self.current_state)
+    #             return self.current_state, -10, done, None
+    #     if self.reverse_action_map[action] == 'b1':
+    #         if b <= 3:
+    #             # self.P[present_state][self.action_map['b1']] = [(1.0, self.state_sequence(a, b+1, c), self.model(a, b+1, c) - self.model(a, b, c) - 1 - self.dist_lambda * self.distance_to_closest_k_points(a, b+1, c), None)]
+    #             self.current_state = np.array([a, b+1, c])
+    #             done = self.prediction(self.current_state)
+    #         else:
+    #             # self.P[present_state][self.action_map['b1']] = [(1.0, present_state, -10, None)]		# 10 times the negative reward if the agent tries to violate the boundary condition
+    #             done = self.prediction(self.current_state)
+    #             return self.current_state, -10, done, None
+    #     # if b >= 1:
+    #     # 	self.P[present_state][self.action_map['b2']] = [(1.0, self.state_sequence(a, b-1, c), self.model(a, b-1, c) - self.model(a, b, c) - 1 - self.dist_lambda * self.distance_to_closest_k_points(a, b-1, c), None)]
+    #     # else:
+    #     # 	self.P[present_state][self.action_map['b2']] = [(1.0, present_state, -10, None)]
+    #     if self.reverse_action_map[action] == 'c1':
+    #         if c <= 3:
+    #             # self.P[present_state][self.action_map['c1']] = [(1.0, self.state_sequence(a, b, c+1), self.model(a, b, c+1) - self.model(a, b, c) - 1 - self.dist_lambda * self.distance_to_closest_k_points(a, b, c+1), None)]
+    #             self.current_state = np.array([a, b, c+1])
+    #             done = self.prediction(self.current_state)
+    #         else:
+    #             # self.P[present_state][self.action_map['c1']] = [(1.0, present_state, -10, None)]
+    #             done = self.prediction(self.current_state)
+    #             return self.current_state, -10, done, None
+    #     # no more action c2
+    #     # if c >= 1:
+    #     # 	self.P[present_state][self.action_map['c2']] = [(1.0, self.state_sequence(a, b, c-1), self.model(a, b, c-1) - self.model(a, b, c) - 1 - self.dist_lambda * self.distance_to_closest_k_points(a, b, c-1), None)]
+    #     # else:
+    #     # 	self.P[present_state][self.action_map['c2']] = [(1.0, present_state, -10, None)]
+    #     # print(a, b, c, "hello")
+    #     # print("done")
+    #     return self.current_state, self.model(self.current_state) - self.model(self.previous_state) - 1 - self.dist_lambda * self.distance_to_closest_k_points(self.current_state), done, None
+
     def step(self, action):
-        a, b, c = self.current_state
+        self.north_magnitude = 0.05
+        self.south_magnitude = -0.05
+        self.east_magnitude = 0.1
+        self.west_magnitude = -0.1
+        
+        x1, x2 = self.current_state
         self.previous_state = copy.deepcopy(self.current_state)
-        if self.reverse_action_map[action] == 'a1':
-            if a <= 3:
-                # self.P[present_state][self.action_map['a1']] = [(1.0, self.state_sequence(a+1, b, c), self.model(a+1, b, c) - self.model(a, b, c) - 1 - self.dist_lambda * self.distance_to_closest_k_points(a+1, b, c), None)]
-                self.current_state = np.array([a+1, b, c])
-                done = self.prediction(self.current_state)
-                # return self.current_state, self.model(self.current_state) - self.model(a, b, c) - 1 - self.dist_lambda * self.distance_to_closest_k_points(self.current_state), done
-            else:
-                # self.P[present_state][self.action_map['a1']] = [(1.0, present_state, -10, None)]
-                done = self.prediction(self.current_state)
-                return self.current_state, -10, done, None
-        if self.reverse_action_map[action] == 'a2':
-            if a >= 1:
-                # self.P[present_state][self.action_map['a2']] = [(1.0, self.state_sequence(a-1, b, c), self.model(a-1, b, c) - self.model(a, b, c) - 1 - self.dist_lambda * self.distance_to_closest_k_points(a-1, b, c), None)]
-                self.current_state = np.array([a-1, b, c])
+        if self.reverse_action_map[action] == 'n':
+            if x2 < 1:
+                self.current_state = np.array([x1, x2 + self.north_magnitude])
                 done = self.prediction(self.current_state)
             else:
-                # self.P[present_state][self.action_map['a2']] = [(1.0, present_state, -10, None)]
                 done = self.prediction(self.current_state)
                 return self.current_state, -10, done, None
-        if self.reverse_action_map[action] == 'b1':
-            if b <= 3:
-                # self.P[present_state][self.action_map['b1']] = [(1.0, self.state_sequence(a, b+1, c), self.model(a, b+1, c) - self.model(a, b, c) - 1 - self.dist_lambda * self.distance_to_closest_k_points(a, b+1, c), None)]
-                self.current_state = np.array([a, b+1, c])
+
+        if self.reverse_action_map[action] == 's':
+            if x2 > -1:
+                self.current_state = np.array([x1, x2 + self.south_magnitude])
                 done = self.prediction(self.current_state)
             else:
-                # self.P[present_state][self.action_map['b1']] = [(1.0, present_state, -10, None)]		# 10 times the negative reward if the agent tries to violate the boundary condition
                 done = self.prediction(self.current_state)
                 return self.current_state, -10, done, None
-        # if b >= 1:
-        # 	self.P[present_state][self.action_map['b2']] = [(1.0, self.state_sequence(a, b-1, c), self.model(a, b-1, c) - self.model(a, b, c) - 1 - self.dist_lambda * self.distance_to_closest_k_points(a, b-1, c), None)]
-        # else:
-        # 	self.P[present_state][self.action_map['b2']] = [(1.0, present_state, -10, None)]
-        if self.reverse_action_map[action] == 'c1':
-            if c <= 3:
-                # self.P[present_state][self.action_map['c1']] = [(1.0, self.state_sequence(a, b, c+1), self.model(a, b, c+1) - self.model(a, b, c) - 1 - self.dist_lambda * self.distance_to_closest_k_points(a, b, c+1), None)]
-                self.current_state = np.array([a, b, c+1])
-                done = self.prediction(self.current_state)
-            else:
-                # self.P[present_state][self.action_map['c1']] = [(1.0, present_state, -10, None)]
-                done = self.prediction(self.current_state)
-                return self.current_state, -10, done, None
-        # no more action c2
-        # if c >= 1:
-        # 	self.P[present_state][self.action_map['c2']] = [(1.0, self.state_sequence(a, b, c-1), self.model(a, b, c-1) - self.model(a, b, c) - 1 - self.dist_lambda * self.distance_to_closest_k_points(a, b, c-1), None)]
-        # else:
-        # 	self.P[present_state][self.action_map['c2']] = [(1.0, present_state, -10, None)]
-        # print(a, b, c, "hello")
-        # print("done")
+
+        if self.reverse_action_map[action] == 'e':
+            self.current_state = np.array([x1 + self.east_magnitude, x2])
+            done = self.prediction(self.current_state)
+
+        if self.reverse_action_map[action] == 'w':
+            self.current_state = np.array([x1 + self.west_magnitude, x2])
+            done = self.prediction(self.current_state)
+        # import ipdb; ipdb.set_trace()
         return self.current_state, self.model(self.current_state) - self.model(self.previous_state) - 1 - self.dist_lambda * self.distance_to_closest_k_points(self.current_state), done, None
 
-    def state_sequence(self, a, b, c):
-        if not (a, b, c) in self.states:
-            self.states[(a, b, c)] = self.state_count
-            self.state_count += 1
-
-        return self.states[(a, b, c)]
-
     def model(self, pt):
-        return self.classifier.predict_proba(pt.reshape(1,-1))[0][1]		# find the probability of belonging to class 1 - 
+        # Let the probability in the negative x zone be the y point of the straight line connecting (-8, 0) and (0, 1), which is stating that at x= -8, reward is 0 and at x = 0, reward is 1
+        x1, x2 = pt
+        if x1 >= 5:      # simple classifier
+            return 1      # end of episode high reward
+        # return x1/8 + 1     # this will change 
+        # return 0
+        return x1/5
+        return self.classifier.predict_proba(pt.reshape(1, -1))[0][1]		# find the probability of belonging to class 1 - 
         # There was a major bug in this line, instead of x,y,z, I had written x,y,x. 
 
     def distance_to_closest_k_points(self, pt):
-        x, y, z = pt
-        nearest_dist, nearest_points = self.knn.kneighbors(np.array([y,z]).reshape(1,-1), self.no_points, return_distance=True)		# we will take the 5 closest points. We don't need 6 here because the input points are not training pts.
+        # x, y, z = pt
+        x1, x2 = pt
+        nearest_dist, nearest_points = self.knn.kneighbors(np.array([x1, x2]).reshape(1,-1), self.no_points, return_distance=True)		# we will take the 5 closest points. We don't need 6 here because the input points are not training pts.
         # quantity = np.mean(nearest_dist) / self.no_points
         quantity = np.mean(nearest_dist)		# Now we have that lambda, so no need to divide by self.no_points 
         # print((x,y,z), quantity)
         return quantity
 
     def reset(self):
-        self.current_state = self.X_train.sample().to_numpy()[0]
+        # I think we should only sample X_train whose y == 0, this increased learning by a lot. The other way could have been to increase the number of episodes, but this is more effective
+        # import ipdb; ipdb.set_trace()
+        self.current_state = self.total_dataset[self.total_dataset['y'] == 0.0].sample().to_numpy()[0][:2]   # drop y 
+        # self.current_state = self.X_train.sample().to_numpy()[0]
         return self.current_state
 
     def prediction(self, pt):
+        # import ipdb; ipdb.set_trace()
+        # print(pt, "hello")
+        try:
+            x1, x2 = pt
+        except:
+            # if pt.shape == (1, 2):
+            x1, x2 = pt[0]
+        if x1 >= 5:      # simple classifier
+            return True
+        return False
         return self.classifier.predict(pt.reshape(1, -1))[0] == 1
 
 
@@ -180,7 +235,7 @@ def select_action(policy, state):
     return action
 
 
-def update_policy(policy):
+def update_policy(policy, optimizer):
     R = 0
     rewards = []
     # import ipdb; ipdb.set_trace()
@@ -215,14 +270,15 @@ def update_policy(policy):
     return policy
 
 
-def main(episodes, env, policy):
+def main(episodes, env, policy, optimizer):
     running_reward = 10
+    max_time = 1000
     for episode in range(episodes):
         # import ipdb; ipdb.set_trace()
         state = env.reset()  # Reset environment and record the starting state
         done = False
-
-        for time in range(100):
+        session = [state]
+        for time in range(max_time):        # 100 is enough for synthetic2.csv, 1000 for snake dataset.
             action = select_action(policy, state)
             # Step through environment using chosen action
             # state, reward, done, _ = env.step(action.data[0])
@@ -230,17 +286,19 @@ def main(episodes, env, policy):
 
             # Save reward
             policy.reward_episode.append(reward)
+            session.append((action, state))
             if done:
                 break
 
         # Used to determine when the environment is solved.
         running_reward = (running_reward * 0.99) + (time * 0.01)
 
-        policy = update_policy(policy)
+        policy = update_policy(policy, optimizer)
 
-        if episode % 50 == 0:
-            print(f'Episode {episode}\tLast length: {time:5d}\tAverage length: {running_reward:.2f}')
-
+        # if episode % 50 == 0:
+        print(f'Episode {episode}\tLast length: {time:5d}\tAverage length: {running_reward:.2f}')
+        # if time == max_time - 1:
+        #     import ipdb; ipdb.set_trace()
         # I can remove this, because I don't have a sense of upper threshold on the reward
         # if running_reward > env.spec.reward_threshold:
         #     print(f"Solved! Running reward is now {running_reward} and the last episode runs to {time} time steps!")
@@ -249,7 +307,6 @@ def main(episodes, env, policy):
 
 
 def plot(episodes):
-    import matplotlib.pyplot as plt
     window = int(episodes / 20)
     fig, ((ax1), (ax2)) = plt.subplots(2, 1, sharey=True, figsize=[9,9])
     rolling_mean = pd.Series(policy.reward_history).rolling(window).mean()
@@ -269,6 +326,7 @@ def plot(episodes):
     plt.show()
 
 
+# not a good classifier 
 def train_model(file):
     # import ipdb; ipdb.set_trace()
     # X, y = make_classification(n_samples=100, random_state=1)
@@ -284,59 +342,100 @@ def train_model(file):
     clf.score(X_test, y_test)
 
 
-def use_policy(policy, env, file):
-    def take_action(a, b, c, action):
-        if action == "a1" and a <= 3:
-            return (a+1, b, c)
-        elif action == "a2" and a >= 1:
-            return (a-1, b, c)
-        elif action == "b1" and b <= 3:
-            return (a, b+1, c)
-        elif action == "b2" and b >= 1:
-            raise NotImplementedError
-            return (a, b-1, c)
-        elif action == "c1" and c <= 3:
-            return (a, b, c+1)
-        elif action == "c2" and c >= 1:
-            raise NotImplementedError 		# c2 is not more a valid action
-            return (a, b, c-1)
+def plot_trajectories(x, success_rate, closest_points=None, dist_lambda=None):
+    # import ipdb; ipdb.set_trace()
+    x1 = np.linspace(-0.5, 10, 201)
+    x2 = np.sin(x1 / 3)
+    # x1 = np.linspace(-3*np.pi, 3*np.pi, 201)
+    # x2 = np.sin(x1)
+    plt.plot(x1, x2)
+    for path in x:
+        xs = [i[0] for i in path]
+        ys = [i[1] for i in path]
+        # plt.plot(xs, ys)        # I think this will automatically change color
+        markers_on = [0]        # the first point is marked with a shape
+        plt.plot(xs, ys, '-D', markevery=markers_on)
+    plt.xlabel('x1')
+    plt.ylabel('y')
+    plt.axis('tight')
+    success_rate = round(success_rate, 2)
+    plt.title(f'Success rate = {success_rate}, Closest pts = {closest_points}, λ = {dist_lambda}')
+    if closest_points:      # is not None
+        plt.savefig(f'plots/sine_curve/trajectories_knn_deter_{closest_points}_{dist_lambda}.png')
+    else:
+        plt.savefig(f'plots/sine_curve/trajectories_noknn.png')
+    print("PLOT DONE")
+
+
+def use_policy(policy, env, file, closest_points=None, dist_lambda=None):
+    # def take_action(a, b, c, action, env):
+    #     if action == "a1" and a <= 3:
+    #         return (a+1, b, c)
+    #     elif action == "a2" and a >= 1:
+    #         return (a-1, b, c)
+    #     elif action == "b1" and b <= 3:
+    #         return (a, b+1, c)
+    #     elif action == "b2" and b >= 1:
+    #         raise NotImplementedError
+    #         return (a, b-1, c)
+    #     elif action == "c1" and c <= 3:
+    #         return (a, b, c+1)
+    #     elif action == "c2" and c >= 1:
+    #         raise NotImplementedError 		# c2 is not more a valid action
+    #         return (a, b, c-1)
+
+    def take_action(x1, x2, action, env):
+        if action == "n" and x2 < 1:
+            return (x1, x2 + env.north_magnitude)
+        elif action == "s" and x2 > -1:
+            return (x1, x2 + env.south_magnitude)
+        elif action == "e":
+            return (x1 + env.east_magnitude, x2)
+        elif action == "w":
+            return (x1 + env.west_magnitude, x2)
 
     def return_counterfactual(original_individual, transit):
         cost = 0
         individual = copy.deepcopy(original_individual)
         # number = env.state_sequence(*individual)
-
-        maxtry = 30
+        # import ipdb; ipdb.set_trace()
+        maxtry = 600        # we need to increase the number of tries for snake dataset, small steps is the reason, increased further for KNN loss
         attempt_no = 0
+        path = [individual]
         while attempt_no < maxtry:
             individual = torch.from_numpy(individual).type(torch.FloatTensor)
             actions = policy(Variable(individual))
             distribution = Categorical(actions)
-            action = distribution.sample()
+            # action = distribution.sample()
+            action = torch.argmax(actions)      # replaced with deterministic actions
             # action_ = np.where(policy[number] == 1)[0]
             # assert len(action_) == 1
             action = env.reverse_action_map[action.item()]
-            new_pt = np.array(take_action(*individual, action))
+            new_pt = np.array(take_action(*individual, action, env))
             cost += 1
             attempt_no += 1
+            # print(action, new_pt, "see")
             if new_pt.any() == None:       # happens for illegal actions, for eg. a1 at [4,4,4]
                 print("unsuccessful: ", original_individual)
-                return transit, cost, None
+                return transit, cost, None, None
+            else:
+                path.append(new_pt)
             if env.prediction(new_pt.reshape(1, -1)):       # if this is equal to 1
                 transit += 1
                 print(original_individual, f"successful: {new_pt}",  cost)
                 # total_cost += cost
-                return transit, cost, env.distance_to_closest_k_points(new_pt)		# the last term gives the Knn distance from k nearest points
+                return transit, cost, env.distance_to_closest_k_points(new_pt), path		# the last term gives the Knn distance from k nearest points
             else:
                 # number = env.state_sequence(*new_pt)
                 if (new_pt == individual):
                     print("unsuccessful: ", original_individual)
-                    return transit, cost, None
+                    return transit, cost, None, None
                 individual = new_pt
         else:
             print("unsuccessful: ", original_individual)
-            return transit, cost, None
+            return transit, cost, None, None
 
+    # import ipdb; ipdb.set_trace()
     total_dataset = pd.read_csv(file)
     Y = total_dataset['y']
     total_dataset = total_dataset.drop(columns=['y'])
@@ -345,29 +444,34 @@ def use_policy(policy, env, file):
     successful_transitions = 0
     total_cost = 0
     knn_dist = 0
+    trajectories = []
     for no_, individual in enumerate(undesirable_x):
-        transit, cost, single_knn_dist = return_counterfactual(individual, successful_transitions)
+        transit, cost, single_knn_dist, path = return_counterfactual(individual, successful_transitions)
         if transit > successful_transitions:
             successful_transitions = transit
             total_cost += cost
             knn_dist += single_knn_dist
+            # 0 : 0.81, 2 : 0, 5 : 0.46, 9 : 0.9, 18: -0.08
+            if no_ in [0, 2, 5, 9, 18]:
+                trajectories.append(path)
 
     try:
         avg_cost = total_cost / successful_transitions
         print(successful_transitions, len(undesirable_x), avg_cost, knn_dist)
-    except:		# due to zero division error 
-        pass
+        success_rate = successful_transitions / len(undesirable_x)
+        plot_trajectories(trajectories, success_rate, closest_points, dist_lambda)
+        return success_rate, avg_cost, knn_dist
+    except:		# due to zero division error, if all fails. 
+        return None, None, None
     # print("see")
-    success_rate = successful_transitions / len(undesirable_x)
-    return success_rate, avg_cost, knn_dist
 
 
 def create_synthetic_data(file):
     # import ipdb; ipdb.set_trace()
-    x1 = np.linspace(-3*np.pi, 3*np.pi, 201)
-    x2 = np.sin(x1)
+    x1 = np.linspace(-0.5, 10, 201)
+    x2 = np.sin(x1 / 3)
     # return x1, x2
-    y = x1 > 0
+    y = x1 >= 5
     graph_nodes_count = 3
     graph_data = np.zeros( (x1.shape[0], graph_nodes_count)  )
     graph_data[:, 0] = x1
@@ -375,34 +479,47 @@ def create_synthetic_data(file):
     graph_data[:, 2] = y
     graph_data = pd.DataFrame(graph_data, columns=['x1', 'x2', 'y'] )
     graph_data.to_csv(file, index=False)
-    # plt.plot(x1, x2)
-    # plt.xlabel('Angle [rad]')
-    # plt.ylabel('sin(x)')
-    # plt.axis('tight')
-    # plt.savefig('sin_curve.png')
-    
+    plt.plot(x1, x2)
+    plt.xlabel('Angle [rad]')
+    plt.ylabel('sin(x)')
+    plt.axis('tight')
+    plt.savefig('sin_curve.png')
+   
+
+def learn(n_actions, clf, X_train, closest_points, dist_lambda, episodes, gamma, learning_rate, file):
+    env = environment(n_actions=n_actions, clf=clf, X_train=X_train, 
+                    closest_points=closest_points, dist_lambda=dist_lambda, file=file)
+
+    policy = Policy(env, gamma)
+    optimizer = optim.Adam(policy.parameters(), lr=learning_rate)
+    final_policy = main(episodes, env, policy, optimizer)
+    # print(final_policy, "Done")
+    # import ipdb; ipdb.set_trace()
+    percentage_success, avg_cost, knn_dist = use_policy(final_policy, env, file, closest_points, dist_lambda)
 
 
 # Hyperparameters
-learning_rate = 0.1
+learning_rate = 0.005
 gamma = 0.99
-# file = "synthetic_snake.csv"
-file = "synthetic2.csv"
+file = "synthetic_snake.csv"
+# file = "synthetic2.csv"
 if not os.path.exists(file):
     create_synthetic_data(file)
     exit(0)
 
 clf, X_train = train_model(file)
 # env = gym.make('CartPole-v1')
-n_actions = 4
-env = environment(n_actions=n_actions, clf=clf, X_train=X_train)
-# env.seed(1)
-
-policy = Policy(env, gamma)
-
-optimizer = optim.Adam(policy.parameters(), lr=learning_rate)
-episodes = 1001
-final_policy = main(episodes, env, policy)
-# print(final_policy, "Done")
 # import ipdb; ipdb.set_trace()
-percentage_success, avg_cost, knn_dist = use_policy(final_policy, env, file)
+closest_points = None
+dist_lambda = 0
+n_actions = 4       # in the snake dataset we still have 4 actions, but they are north, south, east, west - with small magnitudes. North, south - 0.05, East, west - 0.1
+episodes = 201
+
+experiment = True
+if experiment:
+    for closest_points in [1, 2, 5, 10]:
+        for dist_lambda in [0.01, 0.1, 1, 10, 100, 1000]:
+            learn(n_actions, clf, X_train, closest_points, dist_lambda, episodes, gamma, learning_rate, file)
+else:
+    learn(n_actions, clf, X_train, closest_points, dist_lambda, episodes, gamma, learning_rate, file)
+

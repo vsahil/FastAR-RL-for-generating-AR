@@ -58,7 +58,7 @@ class environment:
         self.max_x2 = np.sin(self.max_x1 / 3)
         
         # Let's do Knn only on the second and third feature because first is random - no dropping in the snake dataset
-        self.knn = NearestNeighbors(n_neighbors=6, p=2)	# 1 would be self
+        self.knn = NearestNeighbors(n_neighbors=15, p=2, algorithm='brute')	# 1 would be self
         # self.knn.fit(self.X_train.drop(columns = ['a']))
         self.knn.fit(self.X_train)
         # import ipdb; ipdb.set_trace()
@@ -148,7 +148,8 @@ class environment:
             self.current_state = np.array([x1 + self.west_magnitude, x2])
             done = self.prediction(self.current_state)
         # import ipdb; ipdb.set_trace()
-        return self.current_state, self.model(self.current_state) - self.model(self.previous_state) - 1 - self.dist_lambda * self.distance_to_closest_k_points(self.current_state), done, None
+        nearest_dist, nearest_points = self.distance_to_closest_k_points(self.current_state)
+        return self.current_state, self.model(self.current_state) - self.model(self.previous_state) - 1 - self.dist_lambda * nearest_dist, done, nearest_points
 
     def model(self, pt):
         # Let the probability in the negative x zone be the y point of the straight line connecting (-8, 0) and (0, 1), which is stating that at x= -8, reward is 0 and at x = 0, reward is 1
@@ -168,18 +169,18 @@ class environment:
         # quantity = np.mean(nearest_dist) / self.no_points
         quantity = np.mean(nearest_dist)		# Now we have that lambda, so no need to divide by self.no_points 
         # print((x,y,z), quantity)
-        return quantity
+        return quantity, nearest_points[0]
 
     def reset(self):
         # I think we should only sample X_train whose y == 0, this increased learning by a lot. The other way could have been to increase the number of episodes, but this is more effective
-        # 
+        # self.current_state = self.X_train.sample().to_numpy()[0]
         # self.current_state = self.total_dataset[self.total_dataset['y'] == 0.0].sample().to_numpy()[0][:2]   # drop y 
         # now instead, sample any point from the left half of the 2-D plot.
         # import ipdb; ipdb.set_trace()
         x1_sample = (self.max_x1 - self.min_x1) * np.random.random_sample() + self.min_x1
         x2_sample = (self.max_x2 - self.min_x2) * np.random.random_sample() + self.min_x2
         self.current_state = np.array([x1_sample, x2_sample])
-        # self.current_state = self.X_train.sample().to_numpy()[0]
+
         return self.current_state
 
     def prediction(self, pt):
@@ -284,6 +285,30 @@ def update_policy(policy, optimizer):
     return policy
 
 
+def plot_one_path(env, session):
+    # import ipdb; ipdb.set_trace()
+    state_seq = [i[1] for i in session]
+    x_seq = [i[0] for i in state_seq]
+    y_seq = [i[1] for i in state_seq]
+    x_1 = np.linspace(-0.5, 10, 201)
+    x_2 = np.sin(x_1 / 3)
+    plt.figure()
+    plt.plot(x_1, x_2)
+    plt.plot(x_seq, y_seq, color='red')
+    X_train = env.X_train.to_numpy()
+    for (action, state, nearest_pt) in session:   # this is 2-D array
+        print(action, state, nearest_pt)
+        if nearest_pt:
+            x_values = [state[0], X_train[nearest_pt[0]][0]]
+            y_values = [state[1], X_train[nearest_pt[0]][1]]
+            # print(x_values, y_values)
+            plt.plot(x_values, y_values, color='c')
+            # plt.plot(x1, x2, marker)
+    # print("Distance: ", quantity)
+    plt.show()
+    plt.savefig('path_with_nearest_pts.png')
+
+
 def main(episodes, env, policy, optimizer):
     running_reward = 10
     max_time = 1000
@@ -296,14 +321,15 @@ def main(episodes, env, policy, optimizer):
             action = select_action(policy, state)
             # Step through environment using chosen action
             # state, reward, done, _ = env.step(action.data[0])
-            state, reward, done, _ = env.step(action.item())
+            state, reward, done, nearest_point = env.step(action.item())
 
             # Save reward
             policy.reward_episode.append(reward)
-            session.append((action, state))
+            session.append((action, state, nearest_point))
             if done:
                 break
 
+        plot_one_path(env, session[1:])
         # Used to determine when the environment is solved.
         running_reward = (running_reward * 0.99) + (time * 0.01)
 
@@ -508,18 +534,37 @@ def create_synthetic_data(file):
     plt.savefig('sin_curve.png')
 
 
-# def plot_nearest_point(env, X_train):
-#     x1, x2 = pt
-#     nearest_dist, nearest_points = self.knn.kneighbors(np.array([x1, x2]).reshape(1,-1), self.no_points, return_distance=True)
-#     quantity = np.mean(nearest_dist)
-
+def plot_nearest_point(env, X_train, no_points):
+    # import ipdb; ipdb.set_trace()
+    # pt = X_train.sample().to_numpy()[0]
+    pt = [4, 0.2]
+    x1, x2 = pt
+    no_points = 1
+    nearest_dist, nearest_points = env.knn.kneighbors(np.array([x1, x2]).reshape(1, -1), no_points, return_distance=True)
+    quantity = np.mean(nearest_dist)
+    X_train = X_train.to_numpy()
+    print(nearest_points, len(X_train), nearest_dist)
+    x_1 = np.linspace(-0.5, 10, 201)
+    x_2 = np.sin(x_1 / 3)
+    plt.figure()
+    plt.plot(x_1, x_2)
+    for no_, pts in enumerate(nearest_points[0]):   # this is 2-D array
+        # if no_ == 0:
+        #     continue        # for the same point. 
+        x_values = [x1, X_train[pts][0]]
+        y_values = [x2, X_train[pts][1]]
+        print(x_values, y_values)
+        plt.plot(x_values, y_values)
+        # plt.plot(x1, x2, marker)
+    print("Distance: ", quantity)
+    plt.savefig('neighbours.png')
 
 
 def learn(n_actions, clf, X_train, closest_points, dist_lambda, episodes, gamma, learning_rate, file, deter):
     env = environment(n_actions=n_actions, clf=clf, X_train=X_train, 
                     closest_points=closest_points, dist_lambda=dist_lambda, file=file)
 
-    # plot_nearest_point(env, X_train)
+    # plot_nearest_point(env, X_train, no_points=closest_points)
     policy = Policy(env, gamma)
     optimizer = optim.Adam(policy.parameters(), lr=learning_rate)
     final_policy = main(episodes, env, policy, optimizer)
@@ -540,13 +585,13 @@ if not os.path.exists(file):
 clf, X_train = train_model(file)
 # env = gym.make('CartPole-v1')
 # import ipdb; ipdb.set_trace()
-closest_points = None
-dist_lambda = 0
+closest_points = 1
+dist_lambda = 10
 n_actions = 4       # in the snake dataset we still have 4 actions, but they are north, south, east, west - with small magnitudes. North, south - 0.05, East, west - 0.1
 episodes = 1001
 deter = False
 
-experiment = True
+experiment = False
 if experiment:
     # for closest_points in [1, 2, 5, 10]:
     #     for dist_lambda in [0.01, 0.1, 1, 10, 100, 1000]:

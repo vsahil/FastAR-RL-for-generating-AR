@@ -58,7 +58,7 @@ class environment:
         self.max_x2 = np.sin(self.max_x1 / 3)
         
         # Let's do Knn only on the second and third feature because first is random - no dropping in the snake dataset
-        self.knn = NearestNeighbors(n_neighbors=15, p=2, algorithm='brute')	# 1 would be self
+        self.knn = NearestNeighbors(n_neighbors=25, p=2)	# 1 would be self
         # self.knn.fit(self.X_train.drop(columns = ['a']))
         self.knn.fit(self.X_train)
         # import ipdb; ipdb.set_trace()
@@ -402,9 +402,9 @@ def plot_trajectories(x, success_rate, deter=False, closest_points=None, dist_la
     plt.title(f'Success rate = {success_rate}, Closest pts = {closest_points}, λ = {dist_lambda}')
     if closest_points:      # is not None
         if deter:
-            plt.savefig(f'plots/sine_curve/trajectories_knn_deter_{closest_points}_{dist_lambda}.png')
+            plt.savefig(f'plots/sine_curve/trajectories_knn_l2_deter_{closest_points}_{dist_lambda}.png')
         else:
-            plt.savefig(f'plots/sine_curve/trajectories_knn_nondeter_{closest_points}_{dist_lambda}.png')
+            plt.savefig(f'plots/sine_curve/trajectories_knn_l2_nondeter_{closest_points}_{dist_lambda}.png')
     else:
         if deter:
             plt.savefig(f'plots/sine_curve/trajectories_noknn_deter.png')
@@ -589,7 +589,7 @@ closest_points = 1
 dist_lambda = 10
 n_actions = 4       # in the snake dataset we still have 4 actions, but they are north, south, east, west - with small magnitudes. North, south - 0.05, East, west - 0.1
 episodes = 1001
-deter = False
+deter = True
 
 experiment = False
 if experiment:

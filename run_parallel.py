@@ -8,7 +8,7 @@ def experiment_command(closest_points, dist_lambda):
 
 
 closest_points = [1, 2, 5, 10]
-dist_lambda = [0.01, 0.1, 1, 10, 100, 1000]
+dist_lambda = [0.01, 0.1, 1, 10, 100, 1000, 5000]
 pool = multiprocessing.Pool(len(closest_points)*len(dist_lambda))
 mr = pool.starmap_async(experiment_command, product(closest_points, dist_lambda))
 while not mr.ready():

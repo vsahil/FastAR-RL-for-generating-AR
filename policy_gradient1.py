@@ -18,6 +18,8 @@ from torch.distributions import Categorical
 torch.manual_seed(1)
 
 # This has non-deterministic actions - because we sample from probability. 
+# not working as expected - I might wanna inspect, change L2 distance to L1. Intead of sampling points from sin curve, sample any point from the left half of the plot area, will generalize better. 
+# Find the 2, 5, 10 closest points and plot it for some random points and see if it captures what you want to capture. 
 
 
 class environment:
@@ -47,7 +49,14 @@ class environment:
 
         self.reverse_action_map = {0: 'n', 1: 's', 2: 'e', 3: 'w'}
         self.action_map = {'n': 0, 's': 1, 'e': 2, 'w': 3}
-
+        
+        self.min_x1 = -0.5
+        self.max_x1 = 5
+        # x1 = np.linspace(min_x1, max_x1, 201)
+        # x2 = np.sin(x1 / 3)
+        self.min_x2 = np.sin(self.min_x1 / 3)
+        self.max_x2 = np.sin(self.max_x1 / 3)
+        
         # Let's do Knn only on the second and third feature because first is random - no dropping in the snake dataset
         self.knn = NearestNeighbors(n_neighbors=6, p=2)	# 1 would be self
         # self.knn.fit(self.X_train.drop(columns = ['a']))
@@ -163,8 +172,13 @@ class environment:
 
     def reset(self):
         # I think we should only sample X_train whose y == 0, this increased learning by a lot. The other way could have been to increase the number of episodes, but this is more effective
+        # 
+        # self.current_state = self.total_dataset[self.total_dataset['y'] == 0.0].sample().to_numpy()[0][:2]   # drop y 
+        # now instead, sample any point from the left half of the 2-D plot.
         # import ipdb; ipdb.set_trace()
-        self.current_state = self.total_dataset[self.total_dataset['y'] == 0.0].sample().to_numpy()[0][:2]   # drop y 
+        x1_sample = (self.max_x1 - self.min_x1) * np.random.random_sample() + self.min_x1
+        x2_sample = (self.max_x2 - self.min_x2) * np.random.random_sample() + self.min_x2
+        self.current_state = np.array([x1_sample, x2_sample])
         # self.current_state = self.X_train.sample().to_numpy()[0]
         return self.current_state
 
@@ -295,8 +309,8 @@ def main(episodes, env, policy, optimizer):
 
         policy = update_policy(policy, optimizer)
 
-        # if episode % 50 == 0:
-        print(f'Episode {episode}\tLast length: {time:5d}\tAverage length: {running_reward:.2f}')
+        if episode % 50 == 0:
+            print(f'Episode {episode}\tLast length: {time:5d}\tAverage length: {running_reward:.2f}')
         # if time == max_time - 1:
         #     import ipdb; ipdb.set_trace()
         # I can remove this, because I don't have a sense of upper threshold on the reward
@@ -342,7 +356,7 @@ def train_model(file):
     clf.score(X_test, y_test)
 
 
-def plot_trajectories(x, success_rate, closest_points=None, dist_lambda=None):
+def plot_trajectories(x, success_rate, deter=False, closest_points=None, dist_lambda=None):
     # import ipdb; ipdb.set_trace()
     x1 = np.linspace(-0.5, 10, 201)
     x2 = np.sin(x1 / 3)
@@ -361,13 +375,19 @@ def plot_trajectories(x, success_rate, closest_points=None, dist_lambda=None):
     success_rate = round(success_rate, 2)
     plt.title(f'Success rate = {success_rate}, Closest pts = {closest_points}, λ = {dist_lambda}')
     if closest_points:      # is not None
-        plt.savefig(f'plots/sine_curve/trajectories_knn_deter_{closest_points}_{dist_lambda}.png')
+        if deter:
+            plt.savefig(f'plots/sine_curve/trajectories_knn_deter_{closest_points}_{dist_lambda}.png')
+        else:
+            plt.savefig(f'plots/sine_curve/trajectories_knn_nondeter_{closest_points}_{dist_lambda}.png')
     else:
-        plt.savefig(f'plots/sine_curve/trajectories_noknn.png')
+        if deter:
+            plt.savefig(f'plots/sine_curve/trajectories_noknn_deter.png')
+        else:
+            plt.savefig(f'plots/sine_curve/trajectories_noknn_nondeter.png')
     print("PLOT DONE")
 
 
-def use_policy(policy, env, file, closest_points=None, dist_lambda=None):
+def use_policy(policy, env, file, deter=False, closest_points=None, dist_lambda=None):
     # def take_action(a, b, c, action, env):
     #     if action == "a1" and a <= 3:
     #         return (a+1, b, c)
@@ -406,8 +426,10 @@ def use_policy(policy, env, file, closest_points=None, dist_lambda=None):
             individual = torch.from_numpy(individual).type(torch.FloatTensor)
             actions = policy(Variable(individual))
             distribution = Categorical(actions)
-            # action = distribution.sample()
-            action = torch.argmax(actions)      # replaced with deterministic actions
+            if deter:
+                action = torch.argmax(actions)      # replaced with deterministic actions
+            else:
+                action = distribution.sample()
             # action_ = np.where(policy[number] == 1)[0]
             # assert len(action_) == 1
             action = env.reverse_action_map[action.item()]
@@ -459,7 +481,7 @@ def use_policy(policy, env, file, closest_points=None, dist_lambda=None):
         avg_cost = total_cost / successful_transitions
         print(successful_transitions, len(undesirable_x), avg_cost, knn_dist)
         success_rate = successful_transitions / len(undesirable_x)
-        plot_trajectories(trajectories, success_rate, closest_points, dist_lambda)
+        plot_trajectories(trajectories, success_rate, deter, closest_points, dist_lambda)
         return success_rate, avg_cost, knn_dist
     except:		# due to zero division error, if all fails. 
         return None, None, None
@@ -484,22 +506,30 @@ def create_synthetic_data(file):
     plt.ylabel('sin(x)')
     plt.axis('tight')
     plt.savefig('sin_curve.png')
-   
 
-def learn(n_actions, clf, X_train, closest_points, dist_lambda, episodes, gamma, learning_rate, file):
+
+# def plot_nearest_point(env, X_train):
+#     x1, x2 = pt
+#     nearest_dist, nearest_points = self.knn.kneighbors(np.array([x1, x2]).reshape(1,-1), self.no_points, return_distance=True)
+#     quantity = np.mean(nearest_dist)
+
+
+
+def learn(n_actions, clf, X_train, closest_points, dist_lambda, episodes, gamma, learning_rate, file, deter):
     env = environment(n_actions=n_actions, clf=clf, X_train=X_train, 
                     closest_points=closest_points, dist_lambda=dist_lambda, file=file)
 
+    # plot_nearest_point(env, X_train)
     policy = Policy(env, gamma)
     optimizer = optim.Adam(policy.parameters(), lr=learning_rate)
     final_policy = main(episodes, env, policy, optimizer)
     # print(final_policy, "Done")
     # import ipdb; ipdb.set_trace()
-    percentage_success, avg_cost, knn_dist = use_policy(final_policy, env, file, closest_points, dist_lambda)
+    percentage_success, avg_cost, knn_dist = use_policy(final_policy, env, file, deter, closest_points, dist_lambda)
 
 
 # Hyperparameters
-learning_rate = 0.005
+learning_rate = 0.01
 gamma = 0.99
 file = "synthetic_snake.csv"
 # file = "synthetic2.csv"
@@ -513,7 +543,8 @@ clf, X_train = train_model(file)
 closest_points = None
 dist_lambda = 0
 n_actions = 4       # in the snake dataset we still have 4 actions, but they are north, south, east, west - with small magnitudes. North, south - 0.05, East, west - 0.1
-episodes = 201
+episodes = 1001
+deter = False
 
 experiment = True
 if experiment:
@@ -522,7 +553,7 @@ if experiment:
     closest_points = int(sys.argv[1])
     dist_lambda = float(sys.argv[2])
     print(closest_points, dist_lambda)
-    learn(n_actions, clf, X_train, closest_points, dist_lambda, episodes, gamma, learning_rate, file)
+    learn(n_actions, clf, X_train, closest_points, dist_lambda, episodes, gamma, learning_rate, file, deter)
 else:
-    learn(n_actions, clf, X_train, closest_points, dist_lambda, episodes, gamma, learning_rate, file)
+    learn(n_actions, clf, X_train, closest_points, dist_lambda, episodes, gamma, learning_rate, file, deter)
 

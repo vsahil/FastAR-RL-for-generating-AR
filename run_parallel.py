@@ -2,15 +2,21 @@ import sys, os
 import multiprocessing, subprocess
 from itertools import product
 
+def experiment_command2(lr, gamma, episodes, max_time, fig_directory):
+    # fig_directory = 'plots/try_follow_straightline2'
+    os.system(f"python follow_straightline_snake.py --lr {lr} --gamma {gamma} --episodes {episodes} --max_time {max_time} --fig_directory {fig_directory}")
 
-def experiment_command(closest_points, dist_lambda):
-    os.system(f"python policy_gradient1.py {closest_points} {dist_lambda}")
 
-
-closest_points = [1, 2, 5, 10]
-dist_lambda = [0.01, 0.1, 1, 10, 100, 1000, 5000]
-pool = multiprocessing.Pool(len(closest_points)*len(dist_lambda))
-mr = pool.starmap_async(experiment_command, product(closest_points, dist_lambda))
+# lr = [0.001, 0.005, 0.01, 0.05]
+lr = [0.01, 0.05]
+gamma = [1.0, 0.999, 0.99]
+episodes = [500, 1000, 2000, 3000]
+max_time = [1000, 2000, 4000, 5000]
+fig_directory = ['plots/try_follow_straightline_linear6']
+pool = multiprocessing.Pool(96)
+mr = pool.starmap_async(experiment_command2, product(lr, gamma, episodes, max_time, fig_directory))
+# print("check fig directory")
+# exit(0)
 while not mr.ready():
     sys.stdout.flush()
     mr.wait(0.1)

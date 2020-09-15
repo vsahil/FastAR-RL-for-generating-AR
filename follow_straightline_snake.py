@@ -237,7 +237,7 @@ def main(args, env, policy, optimizer):
     plt.ylabel('Avg. Reward in an episode')
     plt.axis('tight')
     with open(f"{args.fig_directory}/reward.txt", "a") as f:
-        print(args.lr, args.gamma, args.episodes, args.max_time, avg_reward, file=f)
+        print(args.lr, args.gamma, args.episodes, args.max_time, np.mean(avg_rewards[-50:]), avg_reward, file=f)  # mean reward for last 50 episodes. 
     plt.savefig(f'{args.fig_directory}/avg_reward_{args.lr}_{args.gamma}_{args.episodes}_{args.max_time}.png')
     return policy
 

@@ -24,10 +24,10 @@ class environment():
         self.previous_state = np.zeros([2])
         self.current_state = np.zeros([2])
         self.dist_lambda = dist_lambda
-        # self.reverse_action_map = {0: 'n', 1: 's', 2: 'e', 3: 'w'}
-        # self.action_map = {'n': 0, 's': 1, 'e': 2, 'w': 3}
-        self.reverse_action_map = {0: 'e', 1: 'w'}
-        self.action_map = {'e': 0, 'w': 1}
+        self.reverse_action_map = {0: 'n', 1: 's', 2: 'e', 3: 'w'}
+        self.action_map = {'n': 0, 's': 1, 'e': 2, 'w': 3}
+        # self.reverse_action_map = {0: 'e', 1: 'w'}
+        # self.action_map = {'e': 0, 'w': 1}
         self.min_x1 = 4
         self.max_x1 = 6
         self.north = 0.05
@@ -39,15 +39,15 @@ class environment():
         x1, x2 = self.current_state
         self.previous_state = copy.deepcopy(self.current_state)
 
-        # if self.reverse_action_map[action] == 'n':
-        #     self.current_state = np.array([x1, x2 + self.north])
-        #     done = self.prediction(self.current_state)
+        if self.reverse_action_map[action] == 'n':
+            self.current_state = np.array([x1, x2 + self.north])
+            done = self.prediction(self.current_state)
 
-        # elif self.reverse_action_map[action] == 's':
-        #     self.current_state = np.array([x1, x2 + self.south])
-        #     done = self.prediction(self.current_state)
+        elif self.reverse_action_map[action] == 's':
+            self.current_state = np.array([x1, x2 + self.south])
+            done = self.prediction(self.current_state)
 
-        if self.reverse_action_map[action] == 'e':
+        elif self.reverse_action_map[action] == 'e':
             self.current_state = np.array([x1 + self.east, x2])
             done = self.prediction(self.current_state)
 
@@ -64,11 +64,13 @@ class environment():
         return self.current_state, reward, done
 
     def distance_from_manifold(self, point):
-        dist = abs(point[0] - 5)**2         # distance from line x = 5
+        # This is very problematic as for distances less than 1, this will scale down a lot.
+        dist = abs(point[0] - 5)         # distance from line x = 5
         # if dist < 1e-2:
         #     return 100
         # else:
-        return -(dist**2)      # very negative reward for going far. 
+        distance = (dist*100)**2      # squaring after multiplying by 100, very important
+        return -(distance)      # very negative reward for going far. 
         # return np.sqrt(np.sum(point**2))         # distance from (0, 0), that is our manifold
 
     def reset(self, set_state=True):
@@ -201,7 +203,7 @@ def update_policy(policy, optimizer):
 
 def main(args, env, policy, optimizer):
     running_reward = 10
-    avg_rewards = []
+    avg_rewards_list = []
     for episode in range(args.episodes):
         state = env.reset()  # Reset environment and record the starting state
         done = False
@@ -217,8 +219,8 @@ def main(args, env, policy, optimizer):
             if done:
                 break
 
-        avg_reward /= (time + 1)
-        avg_rewards.append(avg_reward)
+        avg_reward /= (time + 1)    # this should not be args.max_time because episodes can end earlier. 
+        avg_rewards_list.append(round(avg_reward, 2))
         # Used to determine when the environment is solved.
         running_reward = (running_reward * 0.99) + (time * 0.01)
         # if episode >= 1:
@@ -232,14 +234,17 @@ def main(args, env, policy, optimizer):
         #     use_policy(policy, env, args)
         print(f'Episode {episode}\tLast length: {time:5d}\tAverage length: {running_reward:.2f}')
     plt.figure()
-    plt.plot(range(args.episodes), avg_rewards)
+    plt.plot(range(args.episodes), avg_rewards_list)
     plt.xlabel('Episodes')
     plt.ylabel('Avg. Reward in an episode')
     plt.axis('tight')
-    with open(f"{args.fig_directory}/reward.txt", "a") as f:
-        print(args.lr, args.gamma, args.episodes, args.max_time, avg_reward, file=f)
+    with open(f"{args.fig_directory}/reward_episode_{args.lr}_{args.gamma}_{args.episodes}_{args.max_time}.txt", "w") as f1:
+        for i in avg_rewards_list:
+            print(i, file=f1)
     plt.savefig(f'{args.fig_directory}/avg_reward_{args.lr}_{args.gamma}_{args.episodes}_{args.max_time}.png')
-    return policy
+    # with open(f"{args.fig_directory}/reward.txt", "a") as f:
+    #     print(args.lr, args.gamma, args.episodes, args.max_time, avg_reward, file=f)
+    return policy, avg_rewards_list
 
 
 def plot_trajectories(x, env, args):
@@ -252,13 +257,13 @@ def plot_trajectories(x, env, args):
         plt.plot(xs, ys, '-D', markevery=markers_on)
         markers_on = [-1]
         plt.plot(xs, ys, '-o', markevery=markers_on)  # the end might be circular
-        print(len(path), "see length of trajectory")
-        print(env.distance_from_manifold(path[0]), env.distance_from_manifold(path[-1]), "see distances")
+        # print(len(path), "see length of trajectory")
+        # print(env.distance_from_manifold(path[0]), env.distance_from_manifold(path[-1]), "see distances")
 
     plt.xlabel('x1')
     plt.ylabel('y')
     plt.axis('tight')
-    plt.title(f'Reward type = {env.dist_lambda}')
+    plt.title(f'Reward type = -100 * absolute_distance')
     if args.deter:
         plt.savefig(f'{args.fig_directory}/trajectories_l2_deter_{args.lr}_{args.gamma}_{args.episodes}_{args.max_time}.png')
     else:
@@ -294,16 +299,22 @@ def use_policy(policy, env, args):
         print(original_individual, f"successful: {new_pt}",  attempt_no)
         return attempt_no, env.distance_from_manifold(new_pt), path
 
+    # import ipdb; ipdb.set_trace()
     trajectories = []
     test_points = 20
+    final_errors = []
     for _ in range(test_points):
         individual = env.reset()
-        cost, single_knn_dist, path = return_counterfactual(individual)
-        trajectories.append(path)
+        cost, single_dist, path = return_counterfactual(individual)
+        final_errors.append(single_dist)
+        trajectories.append((path, single_dist))
 
-    # print(test_points, "hello")
     trajectories = random.choices(trajectories, k=8)
+    # for i in trajectories:
+    #     print(i)
+    trajectories = [x[0] for x in trajectories]     # only the paths to be plotted
     plot_trajectories(trajectories, env, args)
+    return final_errors
 
 
 def learn(n_actions, dist_lambda, args):
@@ -312,8 +323,12 @@ def learn(n_actions, dist_lambda, args):
     # policy = Policy(env, args.gamma)
     policy = Policy_linear(env, args.gamma)
     optimizer = optim.Adam(policy.parameters(), lr=args.lr)
-    final_policy = main(args, env, policy, optimizer)
-    use_policy(final_policy, env, args)
+    final_policy, avg_rewards_list = main(args, env, policy, optimizer)
+    torch.save(final_policy.state_dict(), f'{args.fig_directory}/model_{args.lr}_{args.gamma}_{args.episodes}_{args.max_time}.pth')
+    final_errors = use_policy(final_policy, env, args)
+    # print(final_errors, "see")
+    with open(f"{args.fig_directory}/reward.txt", "a") as f:
+        print(args.lr, args.gamma, args.episodes, args.max_time, round(np.mean(avg_rewards_list[-50:]),2), avg_rewards_list[-1], round(np.mean(final_errors),2), round(np.median(final_errors),2), file=f)
 
 
 import argparse
@@ -333,6 +348,10 @@ parser.add_argument('--fig_directory', type=str, required=True,
                     help='Directory for storing the figures')
 args = parser.parse_args()
 args.deter = bool(args.deter)       # convert to boolean
+
+# with open("configs.txt", "a") as f:
+#     print(f"Started: {args}", file=f)
+    
 # fig_directory = 'plots/try_follow_straightline1'
 # print(args.lr)
 # print(args.gamma)
@@ -344,7 +363,7 @@ args.deter = bool(args.deter)       # convert to boolean
 # import ipdb; ipdb.set_trace()
 
 dist_lambda = 1.0      # lambda = 1.0, when only current distance is used. 
-n_actions = 2       # in the snake dataset we still have 4 actions, but they are north, south, east, west - with small magnitudes. North, south - 0.05, East, west - 0.1
+n_actions = 4       # in the snake dataset we still have 4 actions, but they are north, south, east, west - with small magnitudes. North, south - 0.05, East, west - 0.1
 
 learn(n_actions, dist_lambda, args)
 # How much effect do hyper-params have, I was seeing complete divergence.

@@ -51,6 +51,10 @@ class environment():
         self.south = -0.05
         self.east = 0.05
         self.west = -0.05
+        self.y_height = 0.4
+        self.x0_boundary = 1.0
+        self.x1_boundary = 3.0
+        self.x2_boundary = 6.0
 
     def step(self, action):
         x1, x2 = self.current_state
@@ -81,29 +85,36 @@ class environment():
         reward = self.dist_lambda * manifold_dist + classifier_dist - 5       # constant negative reward for taking any action. 
         assert reward <= -5     # always less than -1
         return reward
-    
+
     def distance_from_manifold(self, point):
         # we need to find the perpendicular distance to the closest line. Not all distances otherwise a point on one line will also be penalized
-        if point[1] >= 0.0 and point[0] <= 3:
-            perp1 = point[1]       # distance from part 1
-            perp2 = 3.0 - point[0]        # distance from part 2
-            assert perp1 >= 0 and perp2 >= 0
-            dist = min(perp1, perp2)
-            if point[0] < 1.0:
+        # x2_boundary = 6.0
+        if point[1] >= 0.0 and point[0] <= self.x1_boundary:
+            if point[1] <= self.y_height:
+                perp1 = point[1]       # distance from part 1
+                perp2 = self.x1_boundary - point[0]        # distance from part 2
+                assert perp1 >= 0 and perp2 >= 0
+                dist = min(perp1, perp2)
+            else:
+                dist = point[1]     # for point above y height, calculate distance from part 1
+            if point[0] < self.x0_boundary:
                 dist = 50**3          # very very negative reward for going west of x = 1
         
-        elif point[1] < 0.0 and point[0] <= 3:
+        elif point[1] < 0.0 and point[0] <= self.x1_boundary:
             dist = abs(point[1])
 
-        elif point[1] >= 2.0 and point[0] >= 3:
-            dist = point[1] - 2.0
+        elif point[1] >= self.y_height and point[0] >= self.x1_boundary:
+            dist = point[1] - self.y_height
             assert dist >= 0
         
-        elif point[1] < 2.0 and point[0] >= 3:
-            perp1 = 2.0 - point[1]        # distance from part 3
-            perp2 = point[0] - 3.0       # distance from part 2
-            assert perp1 >= 0 and perp2 >= 0
-            dist = min(perp1, perp2)
+        elif point[1] < self.y_height and point[0] >= self.x1_boundary:
+            if point[1] >= 0:
+                perp1 = self.y_height - point[1]        # distance from part 3
+                perp2 = point[0] - self.x1_boundary       # distance from part 2
+                assert perp1 >= 0 and perp2 >= 0
+                dist = min(perp1, perp2)
+            else:
+                dist = self.y_height - point[1]
 
         else:
             print(point, "not falls in any region")
@@ -123,15 +134,15 @@ class environment():
         part = random.randint(1, 3)
         if part == 1:
             x2_sample = 0
-            x1_sample = (3 - 1) * np.random.random_sample() + 1
+            x1_sample = (self.x1_boundary - self.x0_boundary) * np.random.random_sample() + self.x0_boundary
         
         elif part == 2:
-            x1_sample = 3
-            x2_sample = 2 * np.random.random_sample()
+            x1_sample = self.x1_boundary
+            x2_sample = self.y_height * np.random.random_sample()
         
         elif part == 3:
-            x2_sample = 2
-            x1_sample = (5 - 3) * np.random.random_sample() + 3
+            x2_sample = self.y_height
+            x1_sample = (5 - self.x1_boundary) * np.random.random_sample() + self.x1_boundary
         
         if set_state:
             self.current_state = np.array([x1_sample, x2_sample])
@@ -331,10 +342,10 @@ def plot_trajectories_later(x, env, args):
 def plot_trajectories(x, env, args):
     plt.figure()
     plt.axvline(x=5)
-    xs = [1, 3, 3, 6, 6]
-    ys = [0, 0, 2, 2, 0]
+    xs = [env.x0_boundary, env.x1_boundary, env.x1_boundary, env.x2_boundary, env.x2_boundary]
+    ys = [0, 0, env.y_height, env.y_height, 0]
     plt.xlim(0, 7)
-    plt.ylim(0, 5)
+    plt.ylim(0, 3)
     plt.plot(xs, ys)
     for path in x:
         xs = [i[0] for i in path]
@@ -425,7 +436,7 @@ def learn(n_actions, args, load=False):
         final_policy, avg_rewards_list = main(args, env, policy, optimizer)
         torch.save(final_policy.state_dict(), path)
         final_errors = use_policy(final_policy, env, args, load=False)
-        # print(final_errors, "see")
+        print(final_errors, "see")
         with open(f"{args.fig_directory}/reward.txt", "a") as f:
             print(args.lr, args.gamma, args.dist_lambda, args.episodes, args.max_time, round(np.mean(avg_rewards_list[-50:]), 2), avg_rewards_list[-1], round(np.mean(final_errors), 2), round(np.median(final_errors), 2), file=f)
     else:

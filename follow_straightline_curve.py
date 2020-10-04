@@ -17,6 +17,27 @@ torch.manual_seed(1)
 random.seed(4)
 
 
+# the curve will be lines x = 3 [y = 0, 2] then y = 2 [x=3, 6] then x = 6 [y = 0, 2]. 
+# Classifier is the line x >= 5. The initial points will be sampled on the left side of the curve. Remember to start with the points on the curve, not random points. 
+
+
+def plot_curve(env=None):
+    plt.figure()
+    xs = [1, 3, 3, 6, 6]
+    ys = [0, 0, 2, 2, 0]
+    plt.xlim(0, 7)
+    plt.ylim(0, 4)
+    plt.plot(xs, ys)
+    if env:
+        for points in range(20):
+            state = env.reset()
+            plt.plot([state[0]], [state[1]], marker='o', markersize=3, color="red")
+    plt.savefig("straightline_curve.png")
+    exit(0)
+
+# plot_curve()
+
+
 class environment():
     def __init__(self, n_actions, dist_lambda=0):
         self.observation_space = np.zeros([2])
@@ -26,14 +47,14 @@ class environment():
         self.dist_lambda = dist_lambda
         self.reverse_action_map = {0: 'n', 1: 's', 2: 'e', 3: 'w'}
         self.action_map = {'n': 0, 's': 1, 'e': 2, 'w': 3}
-        # self.reverse_action_map = {0: 'e', 1: 'w'}
-        # self.action_map = {'e': 0, 'w': 1}
-        self.min_x1 = 4
-        self.max_x1 = 6
         self.north = 0.05
         self.south = -0.05
         self.east = 0.05
         self.west = -0.05
+        self.y_height = 0.4
+        self.x0_boundary = 1.0
+        self.x1_boundary = 3.0
+        self.x2_boundary = 6.0
 
     def step(self, action):
         x1, x2 = self.current_state
@@ -55,42 +76,82 @@ class environment():
             self.current_state = np.array([x1 + self.west, x2])
             done = self.prediction(self.current_state)
 
-        if int(self.dist_lambda) == 2:
-            raise NotImplementedError
-            reward = -(self.distance_from_manifold(self.current_state) - self.distance_from_manifold(self.previous_state))     # - distance from manifold
-        elif int(self.dist_lambda) == 1:
-            reward = self.distance_from_manifold(self.current_state) - 1       # constant negative reward for taking any action. 
-        assert reward <= -1     # always less than -1
-        return self.current_state, reward, done
+        # print(manifold_dist, classifier_dist, self.current_state, "See the rewards")
+        return self.current_state, self.total_reward(self.current_state), done
+
+    def total_reward(self, point):
+        manifold_dist = self.distance_from_manifold(point)
+        classifier_dist = self.distance_from_classifier(point)
+        reward = self.dist_lambda * manifold_dist + classifier_dist - 5       # constant negative reward for taking any action. 
+        assert reward <= -5     # always less than -1
+        return reward
 
     def distance_from_manifold(self, point):
+        # we need to find the perpendicular distance to the closest line. Not all distances otherwise a point on one line will also be penalized
+        # x2_boundary = 6.0
+        if point[1] >= 0.0 and point[0] <= self.x1_boundary:
+            if point[1] <= self.y_height:
+                perp1 = point[1]       # distance from part 1
+                perp2 = self.x1_boundary - point[0]        # distance from part 2
+                assert perp1 >= 0 and perp2 >= 0
+                dist = min(perp1, perp2)
+            else:
+                dist = point[1]     # for point above y height, calculate distance from part 1
+            if point[0] < self.x0_boundary:
+                dist = 50**3          # very very negative reward for going west of x = 1
+        
+        elif point[1] < 0.0 and point[0] <= self.x1_boundary:
+            dist = abs(point[1])
+
+        elif point[1] >= self.y_height and point[0] >= self.x1_boundary:
+            dist = point[1] - self.y_height
+            assert dist >= 0
+        
+        elif point[1] < self.y_height and point[0] >= self.x1_boundary:
+            if point[1] >= 0:
+                perp1 = self.y_height - point[1]        # distance from part 3
+                perp2 = point[0] - self.x1_boundary       # distance from part 2
+                assert perp1 >= 0 and perp2 >= 0
+                dist = min(perp1, perp2)
+            else:
+                dist = self.y_height - point[1]
+
+        else:
+            print(point, "not falls in any region")
+            raise NotImplementedError
+        
+        return -(dist*10)**2
+
+    def distance_from_classifier(self, point):
         # This is very problematic as for distances less than 1, this will scale down a lot.
         dist = abs(point[0] - 5)         # distance from line x = 5
-        # if dist < 1e-2:
-        #     return 100
-        # else:
-        distance = (dist*100)**2      # squaring after multiplying by 100, very important
+        distance = (dist*10)**2      # squaring after multiplying by 10, very important
         return -(distance)      # very negative reward for going far. 
         # return np.sqrt(np.sum(point**2))         # distance from (0, 0), that is our manifold
 
     def reset(self, set_state=True):
-        # maybe starting on the sine curve causes problems. 
-        x1_sample = (self.max_x1 - self.min_x1) * np.random.random_sample() + self.min_x1
-        assert self.min_x1 <= x1_sample <= self.max_x1
-        # this was for (0, 0) manifold
-        k = 1
-        x2_sample = k * np.random.random_sample()       # samples between 0 and 4
-        # x2_sample = np.sin(x1_sample / 3)       # start on the sine curve
-        assert 0 <= x2_sample <= k
+        # we have 3 sections of the curve, the two line parallel to x, axis and one line parallel to y axis. We should sample equal from them, so use uniform probability.
+        part = random.randint(1, 3)
+        if part == 1:
+            x2_sample = 0
+            x1_sample = (self.x1_boundary - self.x0_boundary) * np.random.random_sample() + self.x0_boundary
+        
+        elif part == 2:
+            x1_sample = self.x1_boundary
+            x2_sample = self.y_height * np.random.random_sample()
+        
+        elif part == 3:
+            x2_sample = self.y_height
+            x1_sample = (5 - self.x1_boundary) * np.random.random_sample() + self.x1_boundary
+        
         if set_state:
             self.current_state = np.array([x1_sample, x2_sample])
-        # return np.array([0, 0])
         return np.array([x1_sample, x2_sample])
 
     def prediction(self, point):
-        # if abs(point[0] - 5) < 0.05:
-        #     return True
-        return False            # let this be false always
+        if point[0] >= 5.0:
+            return True
+        return False
 
 
 class Policy(nn.Module):
@@ -225,31 +286,67 @@ def main(args, env, policy, optimizer):
         running_reward = (running_reward * 0.99) + (time * 0.01)
         # if episode >= 1:
         #     plt.figure()
-        #     plt.plot(range(episode + 1), avg_rewards)
+        #     plt.plot(range(episode + 1), avg_rewards_list)
         #     plt.savefig("avg_reward.png")
 
         policy = update_policy(policy, optimizer)      # batch size = 1
 
         # if episode % 10 == 0:
-        #     use_policy(policy, env, args)
+        #     _ = use_policy(policy, env, args)
         print(f'Episode {episode}\tLast length: {time:5d}\tAverage length: {running_reward:.2f}')
     plt.figure()
     plt.plot(range(args.episodes), avg_rewards_list)
     plt.xlabel('Episodes')
     plt.ylabel('Avg. Reward in an episode')
     plt.axis('tight')
-    with open(f"{args.fig_directory}/reward_episode_{args.lr}_{args.gamma}_{args.episodes}_{args.max_time}.txt", "w") as f1:
+    with open(f"{args.fig_directory}/reward_episode_{args.lr}_{args.gamma}_{args.dist_lambda}_{args.episodes}_{args.max_time}.txt", "w") as f1:
         for i in avg_rewards_list:
             print(i, file=f1)
-    plt.savefig(f'{args.fig_directory}/avg_reward_{args.lr}_{args.gamma}_{args.episodes}_{args.max_time}.png')
+    plt.savefig(f'{args.fig_directory}/avg_reward_{args.lr}_{args.gamma}_{args.dist_lambda}_{args.episodes}_{args.max_time}.png')
     # with open(f"{args.fig_directory}/reward.txt", "a") as f:
     #     print(args.lr, args.gamma, args.episodes, args.max_time, avg_reward, file=f)
     return policy, avg_rewards_list
 
 
+def plot_trajectories_later(x, env, args):
+    plt.figure()
+    plt.axvline(x=5)
+    xs = [1, 3, 3, 6, 6]
+    ys = [0, 0, 2, 2, 0]
+    plt.xlim(0, 7)
+    plt.ylim(0, 5)
+    plt.plot(xs, ys)
+    plt.xlabel('x1')
+    plt.ylabel('y')
+    plt.axis('tight')
+    plt.title('Reward type = -(10 * absolute_distance)**2')
+    import ipdb; ipdb.set_trace()
+    for path in x:
+        xs = [i[0] for i in path]
+        ys = [i[1] for i in path]
+        # markers_on = [0]        # the first and last point ais marked with a shape
+        # plt.plot(xs, ys, '-D', markevery=markers_on)
+        # markers_on = [-1]
+        # plt.plot(xs, ys, '-o', markevery=markers_on)  # the end might be circular
+        plt.plot(xs, ys, 'bo')
+        print(path[0], path[-1], f"see length of trajectory:{len(path)}")
+        print(env.distance_from_manifold(path[0]), env.distance_from_manifold(path[-1]), "see distances")
+        plt.savefig("trajectory.png")
+    # if args.deter:
+    #     plt.savefig(f'{args.fig_directory}/trajectories_l2_deter_{args.lr}_{args.gamma}_{args.dist_lambda}_{args.episodes}_{args.max_time}.png')
+    # else:
+    #     plt.savefig(f'{args.fig_directory}/trajectories_l2_nondeter_{args.lr}_{args.gamma}_{args.dist_lambda}_{args.episodes}_{args.max_time}.png')
+    print("PLOT DONE")
+
+
 def plot_trajectories(x, env, args):
     plt.figure()
     plt.axvline(x=5)
+    xs = [env.x0_boundary, env.x1_boundary, env.x1_boundary, env.x2_boundary, env.x2_boundary]
+    ys = [0, 0, env.y_height, env.y_height, 0]
+    plt.xlim(0, 7)
+    plt.ylim(0, 3)
+    plt.plot(xs, ys)
     for path in x:
         xs = [i[0] for i in path]
         ys = [i[1] for i in path]
@@ -257,21 +354,21 @@ def plot_trajectories(x, env, args):
         plt.plot(xs, ys, '-D', markevery=markers_on)
         markers_on = [-1]
         plt.plot(xs, ys, '-o', markevery=markers_on)  # the end might be circular
-        # print(len(path), "see length of trajectory")
-        # print(env.distance_from_manifold(path[0]), env.distance_from_manifold(path[-1]), "see distances")
+        print(path[0], path[-1], f"see length of trajectory:{len(path)}")
+        print(env.distance_from_manifold(path[0]), env.distance_from_manifold(path[-1]), "see distances")
 
     plt.xlabel('x1')
     plt.ylabel('y')
     plt.axis('tight')
-    plt.title(f'Reward type = -100 * absolute_distance')
+    plt.title('Reward type = -(10 * absolute_distance)**2')
     if args.deter:
-        plt.savefig(f'{args.fig_directory}/trajectories_l2_deter_{args.lr}_{args.gamma}_{args.episodes}_{args.max_time}.png')
+        plt.savefig(f'{args.fig_directory}/trajectories_l2_deter_{args.lr}_{args.gamma}_{args.dist_lambda}_{args.episodes}_{args.max_time}.png')
     else:
-        plt.savefig(f'{args.fig_directory}/trajectories_l2_nondeter_{args.lr}_{args.gamma}_{args.episodes}_{args.max_time}.png')
+        plt.savefig(f'{args.fig_directory}/trajectories_l2_nondeter_{args.lr}_{args.gamma}_{args.dist_lambda}_{args.episodes}_{args.max_time}.png')
     print("PLOT DONE")
 
 
-def use_policy(policy, env, args):
+def use_policy(policy, env, args, load=False):
 
     def return_counterfactual(original_individual):
         individual = copy.deepcopy(original_individual)
@@ -297,9 +394,8 @@ def use_policy(policy, env, args):
                 individual = new_pt
 
         print(original_individual, f"successful: {new_pt}",  attempt_no)
-        return attempt_no, env.distance_from_manifold(new_pt), path
+        return attempt_no, env.total_reward(new_pt), path
 
-    # import ipdb; ipdb.set_trace()
     trajectories = []
     test_points = 20
     final_errors = []
@@ -309,27 +405,48 @@ def use_policy(policy, env, args):
         final_errors.append(single_dist)
         trajectories.append((path, single_dist))
 
-    trajectories = random.choices(trajectories, k=8)
+    trajectories = random.choices(trajectories, k=12)
     # for i in trajectories:
     #     print(i)
     trajectories = [x[0] for x in trajectories]     # only the paths to be plotted
-    plot_trajectories(trajectories, env, args)
+    if not load:
+        plot_trajectories(trajectories, env, args)
+    else:
+        plot_trajectories_later(trajectories, env, args)
     return final_errors
 
 
-def learn(n_actions, dist_lambda, args):
-    env = environment(n_actions=n_actions, dist_lambda=dist_lambda)
+def learn(n_actions, args, load=False):
 
+    def read_reward_file(filename):
+        with open(filename) as f:
+            content = f.readlines()
+        # you may also want to remove whitespace characters like `\n` at the end of each line
+        content = [float(x.strip()) for x in content]
+        return content
+
+    env = environment(n_actions=n_actions, dist_lambda=args.dist_lambda)
+    # plot_curve(env)
+    # import ipdb; ipdb.set_trace()
     # policy = Policy(env, args.gamma)
     policy = Policy_linear(env, args.gamma)
-    optimizer = optim.Adam(policy.parameters(), lr=args.lr)
-    final_policy, avg_rewards_list = main(args, env, policy, optimizer)
-    torch.save(final_policy.state_dict(), f'{args.fig_directory}/model_{args.lr}_{args.gamma}_{args.episodes}_{args.max_time}.pth')
-    final_errors = use_policy(final_policy, env, args)
-    # print(final_errors, "see")
-    with open(f"{args.fig_directory}/reward.txt", "a") as f:
-        print(args.lr, args.gamma, args.episodes, args.max_time, round(np.mean(avg_rewards_list[-50:]),2), avg_rewards_list[-1], round(np.mean(final_errors),2), round(np.median(final_errors),2), file=f)
-
+    path = f'{args.fig_directory}/model_{args.lr}_{args.gamma}_{args.episodes}_{args.max_time}.pth'
+    if not load:
+        optimizer = optim.Adam(policy.parameters(), lr=args.lr)
+        final_policy, avg_rewards_list = main(args, env, policy, optimizer)
+        torch.save(final_policy.state_dict(), path)
+        final_errors = use_policy(final_policy, env, args, load=False)
+        print(final_errors, "see")
+        with open(f"{args.fig_directory}/reward.txt", "a") as f:
+            print(args.lr, args.gamma, args.dist_lambda, args.episodes, args.max_time, round(np.mean(avg_rewards_list[-50:]), 2), avg_rewards_list[-1], round(np.mean(final_errors), 2), round(np.median(final_errors), 2), file=f)
+    else:
+        # import ipdb; ipdb.set_trace()
+        policy.load_state_dict(torch.load(path))
+        final_errors = use_policy(policy, env, args, load=False)
+        avg_rewards_list = read_reward_file(f"{args.fig_directory}/reward_episode_{args.lr}_{args.gamma}_{args.dist_lambda}_{args.episodes}_{args.max_time}.txt")
+        with open(f"{args.fig_directory}/reward1.txt", "a") as f:
+            print(args.lr, args.gamma, args.dist_lambda, args.episodes, args.max_time, round(np.mean(avg_rewards_list[-50:]), 2), avg_rewards_list[-1], round(np.mean(final_errors), 2), round(np.median(final_errors), 2), file=f)
+        # print(final_errors)
 
 import argparse
 
@@ -338,6 +455,8 @@ parser.add_argument('--lr', type=float, default=0.01,
                     help='Learning Rate')
 parser.add_argument('--gamma', type=float, default=0.99,
                     help='Discount factor Gamma')
+parser.add_argument('--dist_lambda', type=float, default=1.0,
+                    help='Multiplying factor with distance')
 parser.add_argument('--episodes', type=int, default=100,
                     help='No. of episodes')
 parser.add_argument('--max_time', type=int, default=1000,
@@ -362,9 +481,9 @@ args.deter = bool(args.deter)       # convert to boolean
 # # exit(0)
 # import ipdb; ipdb.set_trace()
 
-dist_lambda = 1.0      # lambda = 1.0, when only current distance is used. 
+dist_lambda = args.dist_lambda      # lambda = 1.0, when only current distance is used. 
 n_actions = 4       # in the snake dataset we still have 4 actions, but they are north, south, east, west - with small magnitudes. North, south - 0.05, East, west - 0.1
 
-learn(n_actions, dist_lambda, args)
+learn(n_actions, args, load=False)
 # How much effect do hyper-params have, I was seeing complete divergence.
 # avg reward per episode 

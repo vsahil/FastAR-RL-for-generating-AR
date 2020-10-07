@@ -277,27 +277,29 @@ def use_policy(policy, V, X_test):
 		number = env.states[individual]
 		maxtry = 100
 		path = [original_individual]
+		knn_distances = 0
 		while path_len < maxtry:
 			action_ = np.where(policy[number] == 1)[0]
 			assert len(action_) == 1
 			_, next_state, _, _ = env.P[number][action_[0]][0]	# need to take out of tuple
 			new_pt = env.states_reverse[next_state]
 			path.append(new_pt)
+			knn_distances += env.distance_to_closest_k_points(new_pt)
 			path_len += 1
 
 			if classifier.predict_single(new_pt, env.scaler, env.classifier) == 1:
 				transit += 1
 				print(original_individual, f"successful: {new_pt}",  path_len, path)
-				return transit, path_len, env.distance_to_closest_k_points(new_pt)		# the last term gives the Knn distance from k nearest points
+				return transit, path_len, knn_distances		# the last term gives the Knn distance from k nearest points
 			else:
 				number = env.states[new_pt]
 				if (new_pt == individual):
 					print("unsuccessful1: ", original_individual)
-					return transit, path_len, env.distance_to_closest_k_points(new_pt)
+					return transit, path_len, knn_distances
 				individual = new_pt
 		else:
 			print("unsuccessful2: ", original_individual)
-			return transit, path_len, env.distance_to_closest_k_points(new_pt)
+			return transit, path_len, knn_distances
 
 
 	undesirable_x = []
@@ -318,7 +320,7 @@ def use_policy(policy, V, X_test):
 		if transit > successful_transitions:
 			successful_transitions = transit
 			total_path_len += path_length
-			knn_dist += single_knn_dist
+			knn_dist += (single_knn_dist / path_length)
 
 	try:
 		avg_path_len = total_path_len / successful_transitions
@@ -381,11 +383,11 @@ if __name__ == "__main__":
 	
 	else:
 		env = environment(n_states, n_actions, clf, gamma, scaler, dataset) #, X_train=X_train, closest_points=closest_points, dist_lambda=dist_lambda)
-		final_policy, V = policy_improvement()
-		np.save(f'final_policy_example{example}.npy', final_policy) # save
-		np.save(f'value_example{example}.npy', V) # save
-		# final_policy = np.load(f'final_policy_example{example}.npy')
-		# V = np.load(f'value_example{example}.npy')
+		# final_policy, V = policy_improvement()
+		# np.save(f'final_policy_example{example}.npy', final_policy) # save
+		# np.save(f'value_example{example}.npy', V) # save
+		final_policy = np.load(f'saved_policies/final_policy_example{example}.npy')
+		V = np.load(f'saved_policies/value_example{example}.npy')
 		percentage_success, avg_path_len, avg_knn_dist, time_taken = use_policy(final_policy, V, X_test)
 	
 	with open("expt_results.csv", "a") as f:

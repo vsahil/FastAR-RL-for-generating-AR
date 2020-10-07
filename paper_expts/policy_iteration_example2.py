@@ -79,14 +79,21 @@ class environment:
 			self.states[sts] = self.state_count
 			self.states_reverse[self.state_count] = sts			
 			self.state_count += 1
+		assert self.state_count == self.nS
 
 	
 	def model(self, state):
 		# import ipdb; ipdb.set_trace()
 		# print("hello")
 		# if classifier.predict_single(state, self.scaler, self.classifier) == 1:
-		probability_class1 = self.classifier.predict_proba(np.array([state]).reshape(1,-1))[0][1]	# find the probability of belonging to class 1 - 
+		arr = np.array([state])
+		arr = self.scaler.transform(arr.reshape(1, -1))
+		probability_class1 = self.classifier.predict_proba(arr.reshape(1,-1))[0][1]	# find the probability of belonging to class 1 - 
 		if probability_class1 >= 0.5:
+			try:
+				assert classifier.predict_single(state, self.scaler, self.classifier) == 1
+			except:
+				import ipdb; ipdb.set_trace()
 			return 10		# if it is already in good state then very high reward, this should help us get 100% success rate hopefully
 		return probability_class1		#, multiply by 2 to encourage going to positively classified states	- 100% sucesss and 1.75 cost
 										# multiply by 1, - 100% sucesss and 1.75 cost
@@ -241,48 +248,26 @@ def policy_improvement(policy_eval_fn=policy_eval):
 
 def use_policy(policy, V, X_test):
 	global env
-	def take_action(a, b, c, action):
-		if action == "a1" and a <= 3:
-			return (a+1, b, c)
-		elif action == "a2" and a >= 1:
-			return (a-1, b, c)
-		elif action == "b1" and b <= 3:
-			return (a, b+1, c)
-		elif action == "b2" and b >= 1:
-			raise NotImplementedError
-			return (a, b-1, c)
-		elif action == "c1" and c <= 3:
-			return (a, b, c+1)
-		elif action == "c2" and c >= 1:
-			raise NotImplementedError 		# c2 is not more a valid action
-			return (a, b, c-1)
-	
 	
 	def return_counterfactual(original_individual, transit):
 		path_len = 0
 		individual = copy.deepcopy(original_individual)
 		number = env.states[individual]
 		maxtry = 100
-		attempt_no = 0
-		while attempt_no < maxtry:
+		path = [original_individual]
+		while path_len < maxtry:
 			action_ = np.where(policy[number] == 1)[0]
 			assert len(action_) == 1
-			# action = env.reverse_action_map[action_[0]]
 			_, next_state, _, _ = env.P[number][action_[0]][0]	# need to take out of tuple
 			new_pt = env.states_reverse[next_state]
-			# new_pt = np.array(take_action(*individual, action))
+			path.append(new_pt)
 			path_len += 1
-			attempt_no += 1
-			# if env.classifier.predict(new_pt.reshape(1, -1)) == 1:
 			if classifier.predict_single(new_pt, env.scaler, env.classifier) == 1:
 				transit += 1
-				print(original_individual, f"successful: {new_pt}",  path_len)
-				# total_cost += cost
+				print(original_individual, f"successful: {new_pt}",  path_len, path)
 				return transit, path_len, env.distance_to_closest_k_points(new_pt)		# the last term gives the Knn distance from k nearest points
 			else:
-				# number = env.state_sequence(*new_pt)
 				number = env.states[new_pt]
-				# import ipdb; ipdb.set_trace()
 				if (new_pt == individual):
 					print("unsuccessful1: ", original_individual)
 					return transit, path_len, env.distance_to_closest_k_points(new_pt)
@@ -292,14 +277,7 @@ def use_policy(policy, V, X_test):
 			return transit, path_len, env.distance_to_closest_k_points(new_pt)
 
 
-	# total_dataset = pd.read_csv(file)
-	# Y = total_dataset['y']
-	# total_dataset = total_dataset.drop(columns=['y'])
-	# X_train, X_test, y_train, y_test = train_test_split(total_dataset, Y, stratify=Y, random_state=1)
-	# undesirable_x = X_test[y_test == 0].to_numpy()
-	
 	undesirable_x = []
-	# import ipdb; ipdb.set_trace()
 	for no, i in enumerate(env.dataset.to_numpy()):
 		if classifier.predict_single(i, env.scaler, env.classifier) == 0:
 			undesirable_x.append(tuple(i))
@@ -311,7 +289,7 @@ def use_policy(policy, V, X_test):
 	successful_transitions = 0
 	total_path_len = 0
 	knn_dist = 0
-	# import ipdb; ipdb.set_trace()
+
 	st = time.time()
 	for no_, individual in enumerate(undesirable_x):
 		transit, path_length, single_knn_dist = return_counterfactual(individual, successful_transitions)
@@ -381,13 +359,13 @@ if __name__ == "__main__":
 	
 	else:
 		env = environment(n_states, n_actions, clf, gamma, scaler, dataset) #, X_train=X_train, closest_points=closest_points, dist_lambda=dist_lambda)
-		final_policy, V = policy_improvement()
-		np.save(f'final_policy_example{example}.npy', final_policy) # save
-		np.save(f'value_example{example}.npy', V) # save
-		# final_policy = np.load(f'final_policy_example{example}.npy')
-		# V = np.load(f'value_example{example}.npy')
+		# final_policy, V = policy_improvement()
+		# np.save(f'final_policy_example{example}.npy', final_policy) # save
+		# np.save(f'value_example{example}.npy', V) # save
+		final_policy = np.load(f'final_policy_example{example}.npy')
+		V = np.load(f'value_example{example}.npy')
 		percentage_success, avg_path_len, avg_knn_dist, time_taken = use_policy(final_policy, V, X_test)
 	
 	with open("expt_results.csv", "a") as f:
-		print(f"Example{example}, {percentage_success}, {avg_path_len}, {avg_knn_dist}, {time_taken}", file=f)
+		print(f"Example{example}, {percentage_success}, {avg_path_len}, {avg_knn_dist}, {time_taken}, None", file=f)
 	print("DONE")

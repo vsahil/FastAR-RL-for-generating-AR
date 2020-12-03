@@ -28,9 +28,16 @@ class FollowStep(gym.Env):
         # 2 discrete actions -- going east or north.
         # self.action_space = gym.spaces.Discrete(2)
         # 2 continuous actions but only positive values possible. 
-        self.action_space = gym.spaces.Box(low=np.array([0.0, 0.0]), high=np.array([1.0, 1.0]), dtype=np.float)
+        self.min_action = 0.0
+        self.max_action = 0.2
+        self.action_space = gym.spaces.Box(low=np.array([self.min_action, self.max_action]), high=np.array([self.max_action, self.max_action]), dtype=np.float)
         # X-axis goes from 0 to 7 and Y-axis goes from 0 to 2.
-        self.observation_space = gym.spaces.Box(low=np.array([0.0, 0.0]), high=np.array([7.0, 2.0]), dtype=np.float)
+        self.min_x = 0.0
+        self.max_x = 7.0
+        self.min_y = 0.0
+        self.max_y = 2.0
+        self.observation_space = gym.spaces.Box(low=np.array([self.min_x, self.min_y]), high=np.array([self.max_x, self.max_y]), dtype=np.float)
+        
         self.state = None
         self.actions = ["e", "n"]     # "east (0) increases x coordinate, west (1) decreases x coor."
         self.y_height = 0.4
@@ -55,10 +62,22 @@ class FollowStep(gym.Env):
         if type_ == 1:
             change = 0 if action == 0 else (1 if action == 1 else NotImplementedError)
             self.state[change] += 0.05      # north and east are both increasing respective coordinates 
+
         elif type_ == 2:
-            self.state += action
-            # self.state[0] += action[0]
-            # self.state[1] += action[1]
+            a0 = min(max(action[0], self.min_action), self.max_action)
+            a1 = min(max(action[1], self.min_action), self.max_action)
+            # self.state += action
+            self.state[0] += a0
+            self.state[1] += a1
+            if self.state[0] > self.max_x:
+                self.state[0] = self.max_x
+            elif self.state[0] < self.min_x:
+                self.state[0] = self.min_x
+
+            if self.state[1] > self.max_y:
+                self.state[1] = self.max_y
+            elif self.state[1] < self.min_y:
+                self.state[1] = self.min_y
 
         reward, done = self.total_reward()
         info = {}
@@ -72,7 +91,7 @@ class FollowStep(gym.Env):
         assert reward <= -1     # always less than -1
         done = False
         if self.state[0] >= 5.0:
-            done = True
+            # done = True
             reward += 5
         return reward, done
 
@@ -91,14 +110,14 @@ class FollowStep(gym.Env):
             
             if point[0] < self.x0_boundary:
                 dist = 50**2          # very very negative reward for going west of x = 1
-        
+
         elif point[1] < 0.0 and point[0] <= self.x1_boundary:
             dist = abs(point[1])
 
         elif point[1] >= self.y_height and point[0] >= self.x1_boundary:
             dist = point[1] - self.y_height
             assert dist >= 0
-        
+
         elif point[1] < self.y_height and point[0] >= self.x1_boundary:
             if point[1] >= 0:
                 perp1 = self.y_height - point[1]        # distance from part 3
@@ -111,7 +130,7 @@ class FollowStep(gym.Env):
         else:
             print(point, "not falls in any region")
             raise NotImplementedError
-        
+
         return -(dist)
         # return -(dist*10)**2
 

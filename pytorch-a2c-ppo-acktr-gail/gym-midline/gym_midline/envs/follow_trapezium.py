@@ -26,12 +26,12 @@ class FollowTrapezium(gym.Env):
     def __init__(self, dist_lambda):
         super(FollowTrapezium, self).__init__()
         # 4 discrete actions -- going east, west, north, or south.
-        self.action_space = gym.spaces.Discrete(2)
+        self.action_space = gym.spaces.Discrete(4)
         # X-axis goes from 0 to 7 and Y-axis goes from 0 to 2.
         self.observation_space = gym.spaces.Box(low=np.array([0, 0]), high=np.array([10.0, 3.0]), dtype=np.float)
         self.state = None
-        # self.actions = ["e", "w", "ne", "nw"]     # "east (0) increases x coordinate, west (1) decreases x coor, north (2) increase y coor, south (3) decreases y coor."
-        self.actions = ["e", "ne"]
+        self.actions = ["e", "nw", "w", "nw"]     # "east (0) increases x coordinate, west (1) decreases x coor, north (2) increase y coor, south (3) decreases y coor."
+        # self.actions = ["e", "ne"]
         self.y_height = 2.0
         self.x0_boundary = 0.0
         self.x1_boundary = 2.0
@@ -41,7 +41,7 @@ class FollowTrapezium(gym.Env):
         self.sine_points_stored = []
         self.reset()
 
-    def step(self, action):     
+    def step(self, action):
         # print(action, type(action), "see")
         if isinstance(action, torch.Tensor):
             action = action.numpy()[0][0]
@@ -50,14 +50,14 @@ class FollowTrapezium(gym.Env):
         amount = 0.05
         if action == 0:     # east
             self.state[0] += amount
-        # elif action == 1:      # west
-        #     self.state[0] -= amount
         elif action == 1:      # north east
             self.state[0] += amount
             self.state[1] += amount
-        # elif action == 3:      # north west
-        #     self.state[0] -= amount
-        #     self.state[1] += amount
+        elif action == 2:      # west
+            self.state[0] -= amount
+        elif action == 3:      # north west
+            self.state[0] -= amount
+            self.state[1] += amount
         reward, done = self.total_reward()
         info = {}
         # print(f"Hello, {self.state}, {change}, {reward}, {distance_from_mid}")

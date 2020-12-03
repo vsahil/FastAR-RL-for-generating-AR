@@ -1,0 +1,57 @@
+absl-py==0.11.0
+appnope==0.1.0
+astor==0.8.1
+backcall==0.2.0
+# -e git+https://github.com/openai/baselines.git@ea25b9e8b234e6ee1bca43083f8f3cf974143998#egg=baselines
+cached-property==1.5.2
+click==7.1.2
+cloudpickle==1.2.2
+cycler==0.10.0
+dataclasses==0.6
+decorator==4.4.2
+future==0.18.2
+gast==0.4.0
+google-pasta==0.2.0
+grpcio==1.33.2
+gym==0.15.7
+# -e git+https://github.com/ikostrikov/pytorch-a2c-ppo-acktr-gail.git@84a7582477fb0d5c82ad6d850fe476829dddd2e1#egg=gym_midline&subdirectory=gym-midline
+h5py==3.1.0
+importlib-metadata==3.1.0
+ipdb==0.13.4
+# ipython==7.19.0
+ipython-genutils==0.2.0
+jedi==0.17.2
+joblib==0.17.0
+Keras-Applications==1.0.8
+Keras-Preprocessing==1.1.2
+kiwisolver==1.3.1
+Markdown==3.3.3
+matplotlib==3.3.3
+numpy==1.19.4
+opencv-python==4.4.0.46
+parso==0.7.1
+pexpect==4.8.0
+pickleshare==0.7.5
+Pillow==8.0.1
+prompt-toolkit==3.0.8
+protobuf==3.14.0
+ptyprocess==0.6.0
+pyglet==1.5.0
+Pygments==2.7.2
+pyparsing==2.4.7
+python-dateutil==2.8.1
+scipy==1.5.4
+six==1.15.0
+tensorboard==1.14.0
+tensorflow==1.14.0
+tensorflow-estimator==1.14.0
+termcolor==1.1.0
+torch==1.7.0
+torchvision==0.8.1
+tqdm==4.54.0
+# traitlets==5.0.5
+typing-extensions==3.7.4.3
+wcwidth==0.2.5
+Werkzeug==1.0.1
+wrapt==1.12.1
+zipp==3.4.0

@@ -9,7 +9,7 @@ def convert_numerical_to_categorical(df):
     # numerical: Credit-amount, unique values = 921
     # numerical: age, unique values = 53
     # Split into 2, 3, 4, or 5 categories each of them.
-    # Initial accuracy = 70.5% with all numerical variables. 
+    # Initial accuracy = 70.5% with all numerical variables.
     # import ipdb; ipdb.set_trace()
     values = [2, 3, 4, 5]
     copies = []
@@ -56,6 +56,7 @@ def raw_to_no_missing():
     df.to_csv("german_redone.csv", index=False)
     convert_numerical_to_categorical(df)
     # df_normalized.to_csv("german_redone_normalized_withheader.csv", index=False)
+
 
 import sys
 if __name__ == "__main__":

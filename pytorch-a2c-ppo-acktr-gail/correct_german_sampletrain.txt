@@ -1,0 +1,105 @@
+Setting:0_0.99_256_0.001_0.1, Correct: 248, KNN: 0.33, Path: 14.41
+Setting:0_0.99_256_0.001_0.2, Correct: 247, KNN: 0.32, Path: 13.89
+Setting:0_0.99_128_0.001_0.1, Correct: 245, KNN: 0.33, Path: 14.37
+Setting:0_0.99_128_0.001_0.2, Correct: 245, KNN: 0.34, Path: 14.77
+Setting:0_0.99_256_0.001_0.05, Correct: 245, KNN: 0.36, Path: 15.33
+Setting:0_0.99_128_0.001_0.05, Correct: 244, KNN: 0.35, Path: 15.03
+Setting:0_0.99_256_0.0001_0.1, Correct: 251, KNN: 0.38, Path: 16.35
+Setting:0_0.99_128_0.0001_0.2, Correct: 248, KNN: 0.37, Path: 15.81
+Setting:0_0.99_128_0.0001_0.1, Correct: 249, KNN: 0.39, Path: 16.54
+Setting:0_0.99_128_0.0001_0.05, Correct: 243, KNN: 0.35, Path: 14.83
+Setting:0_0.99_256_0.0001_0.2, Correct: 242, KNN: 0.37, Path: 15.87
+Setting:0_0.99_256_0.0001_0.05, Correct: 244, KNN: 0.40, Path: 16.85
+Avg. above = 245.9 (much better than sampling full space - 224.4)
+Setting:0_0.99_256_1e-05_0.2, Correct: 245, KNN: 0.45, Path: 19.07
+Setting:0_0.99_128_1e-05_0.1, Correct: 245, KNN: 0.47, Path: 19.96
+Setting:0_0.99_128_1e-05_0.2, Correct: 244, KNN: 0.46, Path: 19.37
+Setting:0_0.99_128_1e-05_0.05, Correct: 244, KNN: 0.46, Path: 19.52
+Setting:0_0.99_256_1e-05_0.1, Correct: 241, KNN: 0.45, Path: 19.16
+Setting:0_0.99_256_1e-05_0.05, Correct: 244, KNN: 0.48, Path: 20.36
+
+
+Setting:01_0.99_256_0.001_0.2, Correct: 250, KNN: 0.34, Path: 14.44
+Setting:01_0.99_128_0.001_0.05, Correct: 247, KNN: 0.34, Path: 14.57
+Setting:01_0.99_128_0.001_0.2, Correct: 248, KNN: 0.35, Path: 14.85
+Setting:01_0.99_128_0.0001_0.2, Correct: 247, KNN: 0.37, Path: 15.66
+Setting:01_0.99_256_0.001_0.1, Correct: 244, KNN: 0.32, Path: 13.98
+Setting:01_0.99_256_0.001_0.05, Correct: 245, KNN: 0.34, Path: 14.54
+Setting:01_0.99_256_0.0001_0.1, Correct: 247, KNN: 0.37, Path: 15.94
+Setting:01_0.99_128_0.0001_0.1, Correct: 247, KNN: 0.38, Path: 16.21
+Setting:01_0.99_128_0.001_0.1, Correct: 242, KNN: 0.33, Path: 14.09
+Setting:01_0.99_256_0.0001_0.2, Correct: 247, KNN: 0.43, Path: 18.32
+Setting:01_0.99_256_0.0001_0.05, Correct: 241, KNN: 0.34, Path: 14.62
+Setting:01_0.99_128_0.0001_0.05, Correct: 242, KNN: 0.37, Path: 15.73
+Avg. above = 245.5 (much better than sampling full space - 197.6)
+Setting:01_0.99_128_1e-05_0.1, Correct: 244, KNN: 0.46, Path: 19.25
+Setting:01_0.99_128_1e-05_0.2, Correct: 243, KNN: 0.46, Path: 19.57
+Setting:01_0.99_256_1e-05_0.05, Correct: 239, KNN: 0.45, Path: 18.82
+Setting:01_0.99_128_1e-05_0.05, Correct: 238, KNN: 0.45, Path: 19.03
+Setting:01_0.99_256_1e-05_0.2, Correct: 238, KNN: 0.45, Path: 19.20
+Setting:01_0.99_256_1e-05_0.1, Correct: 236, KNN: 0.44, Path: 18.65
+
+
+Setting:1_0.99_256_0.0001_0.1, Correct: 250, KNN: 0.39, Path: 16.61
+Setting:1_0.99_128_0.0001_0.1, Correct: 248, KNN: 0.37, Path: 15.93
+Setting:1_0.99_128_0.0001_0.2, Correct: 248, KNN: 0.36, Path: 15.58
+Setting:1_0.99_128_0.0001_0.05, Correct: 248, KNN: 0.37, Path: 15.61
+Setting:1_0.99_128_0.001_0.2, Correct: 245, KNN: 0.33, Path: 14.20
+Setting:1_0.99_256_0.001_0.2, Correct: 242, KNN: 0.32, Path: 13.80
+Setting:1_0.99_128_0.001_0.05, Correct: 243, KNN: 0.33, Path: 14.37
+Setting:1_0.99_128_0.001_0.1, Correct: 242, KNN: 0.32, Path: 13.91
+Setting:1_0.99_256_0.0001_0.2, Correct: 245, KNN: 0.37, Path: 15.76
+Setting:1_0.99_256_0.0001_0.05, Correct: 244, KNN: 0.36, Path: 15.30
+Setting:1_0.99_256_0.001_0.1, Correct: 239, KNN: 0.32, Path: 13.97
+Setting:1_0.99_256_0.001_0.05, Correct: 241, KNN: 0.34, Path: 14.57
+Avg. above = 244.6 (much better than sampling full space - 162.3)
+Setting:1_0.99_128_1e-05_0.05, Correct: 242, KNN: 0.45, Path: 18.88
+Setting:1_0.99_128_1e-05_0.1, Correct: 243, KNN: 0.44, Path: 18.77
+Setting:1_0.99_128_1e-05_0.2, Correct: 239, KNN: 0.44, Path: 18.46
+Setting:1_0.99_256_1e-05_0.05, Correct: 235, KNN: 0.44, Path: 18.41
+Setting:1_0.99_256_1e-05_0.1, Correct: 234, KNN: 0.43, Path: 18.24
+Setting:1_0.99_256_1e-05_0.2, Correct: 233, KNN: 0.43, Path: 18.14
+
+
+Setting:10_0.99_256_0.001_0.2, Correct: 88, KNN: 0.29, Path: 12.62
+Setting:10_0.99_256_0.0001_0.2, Correct: 111, KNN: 0.15, Path: 7.01
+Setting:10_0.99_256_0.0001_0.05, Correct: 104, KNN: 0.29, Path: 12.49
+Setting:10_0.99_256_0.0001_0.1, Correct: 84, KNN: 0.35, Path: 15.00
+Setting:10_0.99_256_0.001_0.05, Correct: 37, KNN: 0.27, Path: 11.78
+Setting:10_0.99_256_0.001_0.1, Correct: 21, KNN: 0.25, Path: 11.14
+Setting:10_0.99_128_0.001_0.05, Correct: 86, KNN: 0.39, Path: 16.67
+Setting:10_0.99_128_0.0001_0.05, Correct: 54, KNN: 0.40, Path: 16.83
+Setting:10_0.99_128_0.001_0.1, Correct: 51, KNN: 0.45, Path: 18.86
+Setting:10_0.99_128_0.0001_0.2, Correct: 26, KNN: 0.50, Path: 20.85
+Setting:10_0.99_128_0.0001_0.1, Correct: 27, KNN: 0.49, Path: 20.59
+Setting:10_0.99_128_0.001_0.2, Correct: 0, KNN: 0.0, Path: 0.00
+Avg. above = 57.4 (much better than sampling full space - 40.5)
+Setting:10_0.99_128_1e-05_0.1, Correct: 207, KNN: 0.38, Path: 16.21
+Setting:10_0.99_256_1e-05_0.05, Correct: 187, KNN: 0.38, Path: 16.10
+Setting:10_0.99_128_1e-05_0.2, Correct: 22, KNN: 0.21, Path: 9.59
+Setting:10_0.99_256_1e-05_0.2, Correct: 107, KNN: 0.28, Path: 12.28
+Setting:10_0.99_128_1e-05_0.05, Correct: 120, KNN: 0.40, Path: 16.91
+Setting:10_0.99_256_1e-05_0.1, Correct: 111, KNN: 0.15, Path: 7.01
+
+
+Setting:100_0.99_128_0.001_0.05, Correct: 30, KNN: 0.51, Path: 21.33
+Setting:100_0.99_128_0.0001_0.2, Correct: 109, KNN: 0.29, Path: 12.77
+Setting:100_0.99_128_0.001_0.2, Correct: 1, KNN: 0.03, Path: 2.00
+Setting:100_0.99_128_0.0001_0.05, Correct: 77, KNN: 0.25, Path: 10.90
+Setting:100_0.99_128_0.0001_0.1, Correct: 77, KNN: 0.39, Path: 16.55
+Setting:100_0.99_128_0.001_0.1, Correct: 50, KNN: 0.37, Path: 15.88
+Setting:100_0.99_256_0.001_0.05, Correct: 1, KNN: 0.00, Path: 1.00
+Setting:100_0.99_256_0.0001_0.2, Correct: 67, KNN: 0.40, Path: 16.82
+Setting:100_0.99_256_0.0001_0.1, Correct: 61, KNN: 0.31, Path: 13.59
+Setting:100_0.99_256_0.001_0.1, Correct: 43, KNN: 0.32, Path: 13.74
+Setting:100_0.99_256_0.0001_0.05, Correct: 33, KNN: 0.12, Path: 5.88
+Setting:100_0.99_256_0.001_0.2, Correct: 15, KNN: 0.39, Path: 16.80
+Avg. above = 47 (much better than sampling full space - 31.3)
+Setting:100_0.99_256_1e-05_0.2, Correct: 10, KNN: 0.23, Path: 10.20
+Setting:100_0.99_128_1e-05_0.05, Correct: 29, KNN: 0.20, Path: 9.10
+Setting:100_0.99_256_1e-05_0.1, Correct: 107, KNN: 0.29, Path: 12.43
+Setting:100_0.99_128_1e-05_0.1, Correct: 136, KNN: 0.41, Path: 17.25
+Setting:100_0.99_256_1e-05_0.05, Correct: 84, KNN: 0.35, Path: 14.85
+Setting:100_0.99_128_1e-05_0.2, Correct: 22, KNN: 0.20, Path: 8.82
+
+# Total datapoints = 257. This line is a comment which pandas can detect. 

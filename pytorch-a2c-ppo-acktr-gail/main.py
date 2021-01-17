@@ -95,24 +95,30 @@ def main():
                               actor_critic.recurrent_hidden_state_size)
 
     if args.eval:
-        # ob_rms = utils.get_vec_normalize(envs).ob_rms
         # import ipdb; ipdb.set_trace()
         if args.env_name == "gym_midline:midline-v0":
-            # num_episodes = 300        # discrete action
+            # num_episodes = 300        # discrete actions
             num_episodes = 800          # continuous actions
         elif args.env_name in ["gym_midline:step-v01", "gym_midline:step-v1", "gym_midline:step-v10"]:
-            num_episodes = 12500
+            num_episodes = 12500    # discrete actions
+            num_episodes = 7500     # continuous actions
         elif args.env_name == "gym_midline:step-v100":
-            num_episodes = 10500
+            num_episodes = 10500    # discrete actions
+            num_episodes = 7500     # continuous actions
         elif args.env_name == "gym_midline:step-v1000":
-            num_episodes = 10500
+            num_episodes = 10500    # discrete actions
+            num_episodes = 7500     # continuous actions
 
         elif args.env_name in ["gym_midline:sine-v01", "gym_midline:sine-v1", "gym_midline:sine-v10"]:
-            num_episodes = 28500
-        elif args.env_name == "gym_midline:sine-v100":
-            num_episodes = 28500
-        elif args.env_name == "gym_midline:sine-v1000":
-            num_episodes = 28500
+            # num_episodes = 28500
+            num_episodes = 23000        # perpendicular distance, discrete actions
+            num_episodes = 78000        # perpendicular distance, continuous actions
+            # num_episodes = 38000        # perpendicular distance, continuous actions
+        elif args.env_name in ["gym_midline:sine-v100", "gym_midline:sine-v1000", "gym_midline:sine-v10000"]:
+            # num_episodes = 28500
+            num_episodes = 23000        # perpendicular distance, discrete actions
+            num_episodes = 78000        # perpendicular distance, continuous actions
+            # num_episodes = 38000        # perpendicular distance, continuous actions
 
         elif args.env_name in ["gym_midline:trapezium-v01", "gym_midline:trapezium-v1"]:
             # num_episodes = 18500  # version 1
@@ -123,8 +129,55 @@ def main():
             # num_episodes = 27500    # version 2
             num_episodes = 7500    # version 3
 
+        elif args.env_name in ['gym_midline:germanreduced-v01', 'gym_midline:germanreduced-v1', 'gym_midline:germanreduced-v10', 'gym_midline:germanreduced-v100', 'gym_midline:germanreduced-v1000']:
+            num_episodes = 7700
+
+        # German 4
+        elif 'german4' in args.save_dir and args.env_name in ['gym_midline:german-v01', 'gym_midline:german-v1', 'gym_midline:german-v10', 'gym_midline:german-v100', 'gym_midline:german-v1000']:
+            if args.num_steps == 128:
+                num_episodes = 156000
+            elif args.num_steps == 256:
+                num_episodes = 78000
+            else:
+                raise NotImplementedError
+
+        # German 5 with sampling from training dataset
+        elif 'german5' in args.save_dir and 'sampletrain' in args.save_dir and args.env_name in ['gym_midline:german-v0', 'gym_midline:german-v01', 'gym_midline:german-v1', 'gym_midline:german-v10', 'gym_midline:german-v100']:
+            if "contiaction" in args.save_dir:  # onehot with continuous actions
+                if args.num_steps == 128:
+                    num_episodes = 60000     # 234374
+                elif args.num_steps == 256:
+                    num_episodes = 30000     # 117186
+                else:
+                    raise NotImplementedError
+            else:       # here for vanilla sampletrain and onehot with sampletrain
+                if args.num_steps == 128:
+                    num_episodes = 39061     # 234374
+                elif args.num_steps == 256:
+                    num_episodes = 19530     # 117186
+                else:
+                    raise NotImplementedError
+
+        # German 5
+        elif 'german5' in args.save_dir and args.env_name in ['gym_midline:german-v01', 'gym_midline:german-v1', 'gym_midline:german-v10', 'gym_midline:german-v100']:
+            if args.num_steps == 128:
+                num_episodes = 230000     # 234374
+            elif args.num_steps == 256:
+                num_episodes = 115000     # 117186
+            else:
+                raise NotImplementedError
+
+        elif 'try' in args.save_dir and args.env_name in ['gym_midline:german-v01', 'gym_midline:german-v1', 'gym_midline:german-v10', 'gym_midline:german-v100', 'gym_midline:german-v1000']:
+            if args.num_steps == 128:
+                num_episodes = 0     # 234374
+            elif args.num_steps == 256:
+                num_episodes = 0     # 117186
+            else:
+                raise NotImplementedError
+
         else:
             raise NotImplementedError
+        # print(num_episodes, "SEE")
         save_path = os.path.join(args.save_dir, args.algo, args.env_name + f"_{num_episodes}.pt")
         actor_critic, ob_rms = torch.load(save_path)
         actor_critic.eval()

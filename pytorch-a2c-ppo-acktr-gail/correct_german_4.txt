@@ -1,0 +1,77 @@
+Setting:0.99_128_0.0001_0.1, Correct: 244, 241
+Setting:0.99_128_0.0001_0.2, Correct: 240, 219
+Setting:0.99_128_0.001_0.2, Correct: 230, 187
+Setting:0.99_128_0.0001_0.05, Correct: 224, 221
+Setting:0.99_128_0.001_0.05, Correct: 216, 171
+Setting:0.99_128_0.001_0.1, Correct: 106, 124
+Setting:1.0_128_0.0001_0.2, Correct: 107
+Setting:1.0_128_0.0001_0.1, Correct: 106
+Setting:1.0_128_0.01_0.05, Correct: 87
+Setting:1.0_128_0.001_0.05, Correct: 70
+Setting:1.0_128_0.0001_0.05, Correct: 60
+Setting:1.0_128_0.001_0.2, Correct: 56
+Setting:1.0_128_0.01_0.2, Correct: 60
+Setting:0.99_128_0.01_0.1, Correct: 32
+Setting:1.0_128_0.001_0.1, Correct: 40
+Setting:0.99_128_0.01_0.05, Correct: 24
+Setting:1.0_128_0.01_0.1, Correct: 4
+Setting:0.99_128_0.01_0.2, Correct: 38
+
+
+Setting:0.99_256_0.001_0.2, Correct: 247
+
+
+Setting:0.99_256_0.001_0.1, Correct: 244
+Setting:0.99_256_0.0001_0.2, Correct: 241
+Setting:0.99_256_0.0001_0.05, Correct: 241
+Setting:0.99_256_0.0001_0.1, Correct: 234
+Setting:0.99_256_0.001_0.05, Correct: 226
+Setting:1.0_256_0.001_0.2, Correct: 214
+Setting:1.0_256_0.0001_0.05, Correct: 133
+Setting:1.0_256_0.0001_0.1, Correct: 113
+Setting:0.99_256_0.01_0.1, Correct: 69
+Setting:0.99_256_0.01_0.05, Correct: 73
+Setting:1.0_256_0.01_0.05, Correct: 59
+Setting:1.0_256_0.001_0.1, Correct: 52
+Setting:0.99_256_0.01_0.2, Correct: 45
+Setting:1.0_256_0.0001_0.2, Correct: 37
+Setting:1.0_256_0.01_0.1, Correct: 31
+Setting:1.0_256_0.001_0.05, Correct: 30
+Setting:1.0_256_0.01_0.2, Correct: 0
+
+# Conclusion:
+Gamma = 0.99, Lr = 1e-3 or 1e-4
+At Lr = 1e-4, and gamma = 0.99, all values of path length and clip are good. 
+I repeated the experiments with path length 128, with a version with lesser episodes, and it seems like more training is better. 
+Setting:0.99_128_0.0001_0.1, Correct: 241
+Setting:0.99_128_0.0001_0.05, Correct: 221
+Setting:0.99_128_0.0001_0.2, Correct: 219
+Setting:0.99_128_0.001_0.2, Correct: 187
+Setting:0.99_128_0.001_0.05, Correct: 171
+Setting:0.99_128_0.001_0.1, Correct: 124
+Setting:1.0_128_0.0001_0.2, Correct: 95
+Setting:1.0_128_0.01_0.05, Correct: 83
+Setting:1.0_128_0.0001_0.05, Correct: 86
+Setting:1.0_128_0.001_0.05, Correct: 53
+Setting:1.0_128_0.01_0.2, Correct: 61
+Setting:1.0_128_0.001_0.2, Correct: 59
+Setting:0.99_128_0.01_0.1, Correct: 28
+Setting:1.0_128_0.0001_0.1, Correct: 68
+Setting:1.0_128_0.001_0.1, Correct: 41
+Setting:0.99_128_0.01_0.05, Correct: 24
+Setting:0.99_128_0.01_0.2, Correct: 40
+Setting:1.0_128_0.01_0.1, Correct: 4
+
+#Rerun with KNN and path
+Setting:01_0.99_256_0.001_0.2, Correct: 247, KNN: 0.40, Path: 16.98
+Setting:01_0.99_256_0.001_0.1, Correct: 244, KNN: 0.39, Path: 16.80
+Setting:01_0.99_128_0.0001_0.1, Correct: 244, KNN: 0.36, Path: 15.62
+Setting:01_0.99_256_0.0001_0.2, Correct: 241, KNN: 0.39, Path: 16.56
+Setting:01_0.99_128_0.0001_0.2, Correct: 240, KNN: 0.44, Path: 18.65
+Setting:01_0.99_256_0.0001_0.05, Correct: 241, KNN: 0.44, Path: 18.52
+Setting:01_0.99_256_0.0001_0.1, Correct: 234, KNN: 0.38, Path: 16.41
+Setting:01_0.99_128_0.001_0.2, Correct: 230, KNN: 0.41, Path: 17.57
+Setting:01_0.99_256_0.001_0.05, Correct: 226, KNN: 0.41, Path: 17.56
+Setting:01_0.99_128_0.0001_0.05, Correct: 224, KNN: 0.46, Path: 19.38
+Setting:01_0.99_128_0.001_0.05, Correct: 216, KNN: 0.39, Path: 16.85
+Setting:01_0.99_128_0.001_0.1, Correct: 106, KNN: 0.33, Path: 14.09

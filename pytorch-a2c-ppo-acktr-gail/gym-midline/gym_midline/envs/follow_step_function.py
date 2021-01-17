@@ -28,9 +28,9 @@ class FollowStep(gym.Env):
         # 2 discrete actions -- going east or north.
         # self.action_space = gym.spaces.Discrete(2)
         # 2 continuous actions but only positive values possible. 
-        self.min_action = 0.0
+        self.min_action = -0.2      # not set to 0, every action should do something. 
         self.max_action = 0.2
-        self.action_space = gym.spaces.Box(low=np.array([self.min_action, self.max_action]), high=np.array([self.max_action, self.max_action]), dtype=np.float)
+        self.action_space = gym.spaces.Box(low=np.array([self.min_action, self.min_action]), high=np.array([self.max_action, self.max_action]), dtype=np.float)
         # X-axis goes from 0 to 7 and Y-axis goes from 0 to 2.
         self.min_x = 0.0
         self.max_x = 7.0
@@ -64,20 +64,22 @@ class FollowStep(gym.Env):
             self.state[change] += 0.05      # north and east are both increasing respective coordinates 
 
         elif type_ == 2:
-            a0 = min(max(action[0], self.min_action), self.max_action)
-            a1 = min(max(action[1], self.min_action), self.max_action)
-            # self.state += action
-            self.state[0] += a0
-            self.state[1] += a1
-            if self.state[0] > self.max_x:
-                self.state[0] = self.max_x
-            elif self.state[0] < self.min_x:
-                self.state[0] = self.min_x
+            action[0] = np.clip(action[0], self.action_space.low[0], self.action_space.high[0])
+            action[1] = np.clip(action[1], self.action_space.low[1], self.action_space.high[1])
+            # a0 = min(max(action[0], self.min_action), self.max_action)
+            # a1 = min(max(action[1], self.min_action), self.max_action)
+            self.state += action
+            # self.state[0] += a0
+            # self.state[1] += a1
+            # if self.state[0] > self.max_x:
+            #     self.state[0] = self.max_x
+            # elif self.state[0] < self.min_x:
+            #     self.state[0] = self.min_x
 
-            if self.state[1] > self.max_y:
-                self.state[1] = self.max_y
-            elif self.state[1] < self.min_y:
-                self.state[1] = self.min_y
+            # if self.state[1] > self.max_y:
+            #     self.state[1] = self.max_y
+            # elif self.state[1] < self.min_y:
+            #     self.state[1] = self.min_y
 
         reward, done = self.total_reward()
         info = {}
@@ -86,7 +88,8 @@ class FollowStep(gym.Env):
 
     def total_reward(self):
         manifold_dist = self.distance_from_manifold()
-        classifier_dist = self.distance_from_classifier()
+        classifier_dist = self.distance_from_classifier()     # negative abs distance from X = 5 line
+        # try without the constant -1. 
         reward = self.dist_lambda * manifold_dist + classifier_dist - 1       # constant negative reward for taking any action. 
         assert reward <= -1     # always less than -1
         done = False
@@ -112,10 +115,12 @@ class FollowStep(gym.Env):
                 dist = 50**2          # very very negative reward for going west of x = 1
 
         elif point[1] < 0.0 and point[0] <= self.x1_boundary:
-            dist = abs(point[1])
+            # dist = abs(point[1])
+            dist = 50**2
 
         elif point[1] >= self.y_height and point[0] >= self.x1_boundary:
-            dist = point[1] - self.y_height
+            dist = ((point[1] - self.y_height)*10)**2      # don't go above this. 
+            # dist = 50**2
             assert dist >= 0
 
         elif point[1] < self.y_height and point[0] >= self.x1_boundary:
@@ -125,7 +130,7 @@ class FollowStep(gym.Env):
                 assert perp1 >= 0 and perp2 >= 0
                 dist = min(perp1, perp2)
             else:
-                dist = self.y_height - point[1]
+                dist = 50**2    #self.y_height - point[1]
 
         else:
             print(point, "not falls in any region")
@@ -190,6 +195,11 @@ class FollowStep100(FollowStep):
 class FollowStep1000(FollowStep):
     def __init__(self, enable_render=True):
         super(FollowStep1000, self).__init__(dist_lambda=1000.0)
+
+
+class FollowStep10000(FollowStep):
+    def __init__(self, enable_render=True):
+        super(FollowStep10000, self).__init__(dist_lambda=10000.0)
 
 
 if __name__ == "__main__":

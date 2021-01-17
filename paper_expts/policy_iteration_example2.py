@@ -281,7 +281,7 @@ def use_policy(policy, V, X_test):
 
 	undesirable_x = []
 	for no, i in enumerate(env.dataset.to_numpy()):
-		if classifier.predict_single(i, env.scaler, env.classifier) == 0:
+		if classifier.predict_single(i, env.scaler, env.classifier) == 0 and i.tolist() == [1, 3, 0, 3, 4, 1]:#[0, 3, 0, 2, 4, 1]: #[1, 3, 0, 3, 4, 1]:
 			undesirable_x.append(tuple(i))
 	
 	print(len(undesirable_x), "Total points to run the approach on")
@@ -291,10 +291,11 @@ def use_policy(policy, V, X_test):
 	successful_transitions = 0
 	total_path_len = 0
 	knn_dist = 0
-
+	path_lengths = []
 	st = time.time()
 	for no_, individual in enumerate(undesirable_x):
 		transit, path_length, single_knn_dist = return_counterfactual(individual, successful_transitions)
+		path_lengths.append(path_length)
 		if transit > successful_transitions:
 			successful_transitions = transit
 			total_path_len += path_length
@@ -308,6 +309,11 @@ def use_policy(policy, V, X_test):
 		pass
 
 	success_rate = successful_transitions / len(undesirable_x)
+	# df = pd.DataFrame({f"Example{example}": path_lengths})
+	# df1 = pd.read_csv("paths.csv")
+	# df1[f"Example{example}"] = df
+	# df1.to_csv("paths.csv", index=False)
+	exit(0)
 	return success_rate, avg_path_len, avg_knn_dist, time.time() - st
 
 

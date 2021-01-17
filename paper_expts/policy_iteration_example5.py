@@ -123,7 +123,7 @@ class environment:
 		return quantity
 
 
-def hepler_policy_eval(policy, V, s):
+def helpler_policy_eval(policy, V, s):
 	global env
 	v = 0
 	delta = 0
@@ -172,7 +172,7 @@ def policy_eval(policy, theta=1e-8, max_iterations=1000):
 		# st = time.time()
 		# pool = multiprocessing.Pool(multiprocessing.cpu_count())
 		# x = zip(itertools.repeat(policy), itertools.repeat(V), ses)
-		# result = pool.starmap_async(hepler_policy_eval, x)
+		# result = pool.starmap_async(helpler_policy_eval, x)
 		# pool.close()
 		
 		# res = result.get()
@@ -300,9 +300,9 @@ def use_policy(policy, V, X_test):
 				return transit, path_len, knn_distances		# the last term gives the Knn distance from k nearest points
 			else:
 				number = env.states[new_pt]
-				if (new_pt == individual):
-					print("unsuccessful1: ", original_individual)
-					return transit, path_len, knn_distances
+				# if (new_pt == individual):
+				# 	print("unsuccessful1: ", original_individual)
+				# 	return transit, path_len, knn_distances
 				individual = new_pt
 		else:
 			print("unsuccessful2: ", original_individual)
@@ -311,7 +311,7 @@ def use_policy(policy, V, X_test):
 
 	undesirable_x = []
 	for no, i in enumerate(env.dataset.to_numpy()):
-		if classifier.predict_single(i, env.scaler, env.classifier) == 0:
+		if classifier.predict_single(i, env.scaler, env.classifier) == 0 and i.tolist() == [1, 3, 0, 3, 4, 1]:# [0, 3, 0, 2, 4, 1]: # [1, 3, 0, 3, 4, 1]:
 			undesirable_x.append(tuple(i))
 	
 	print(len(undesirable_x), "Total points to run the approach on")
@@ -321,9 +321,11 @@ def use_policy(policy, V, X_test):
 	successful_transitions = 0
 	total_path_len = 0
 	knn_dist = 0
+	path_lengths = []
 	st = time.time()
 	for no_, individual in enumerate(undesirable_x):
 		transit, path_length, single_knn_dist = return_counterfactual(individual, successful_transitions)
+		path_lengths.append(path_length)
 		if transit > successful_transitions:
 			successful_transitions = transit
 			total_path_len += path_length
@@ -337,11 +339,16 @@ def use_policy(policy, V, X_test):
 		pass
 
 	success_rate = successful_transitions / len(undesirable_x)
+	# df = pd.DataFrame({f"Example{example}_{lambda_}": path_lengths})
+	# df1 = pd.read_csv("paths.csv")
+	# df1[f"Example{example}_{lambda_}"] = df
+	# df1.to_csv("paths.csv", index=False)
+	exit(0)
 	return success_rate, avg_path_len, avg_knn_dist, time.time() - st
 
 
 if __name__ == "__main__":
-	clf, dataset, scaler, X_test = classifier.train_model(1)	
+	clf, dataset, scaler, X_test = classifier.train_model(1)
 	# n_actions = 2 * (len(dataset.columns) - 1)		# target is removed
 	n_actions = 2 * len(dataset.columns)
 	n_states = np.prod([len(dataset[i].unique()) for i in dataset.columns])		# no of discrete states is the number of unique values for each feature. 

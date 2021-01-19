@@ -38,7 +38,7 @@ def main():
 
     torch.set_num_threads(1)
     device = torch.device("cuda:0" if args.cuda else "cpu")
-
+    st = time.time()
     envs = make_vec_envs(args.env_name, args.seed, args.num_processes,
                          args.gamma, args.log_dir, device, False)
 
@@ -192,6 +192,8 @@ def main():
 
     start = time.time()
     num_updates = int(args.num_env_steps) // args.num_steps // args.num_processes
+    t1 = time.time()
+    print(t1 - st, "First time")
     for j in range(num_updates):
 
         if args.use_linear_lr_decay:
@@ -199,7 +201,7 @@ def main():
             utils.update_linear_schedule(
                 agent.optimizer, j, num_updates,
                 agent.optimizer.lr if args.algo == "acktr" else args.lr)
-
+        t2 = time.time()
         for step in range(args.num_steps):
             # Sample actions
             with torch.no_grad():
@@ -222,6 +224,8 @@ def main():
                  for info in infos])
             rollouts.insert(obs, recurrent_hidden_states, action,
                             action_log_prob, value, reward, masks, bad_masks)
+
+        print(time.time() - t2, "IN LOOP", j)
 
         with torch.no_grad():
             next_value = actor_critic.get_value(

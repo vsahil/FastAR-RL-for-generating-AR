@@ -1,4 +1,4 @@
-import gym, torch
+import gym, torch, time
 import numpy as np
 import random, itertools, copy, sys, os
 from gym.utils import seeding
@@ -113,29 +113,30 @@ class AdultIncome(gym.Env):
 
         reward = -10
         done = False
-        # for imf in self.immutable_features:
-        #     if imf in self.dataset.iloc[:, feature_changing].name:
-        #         return self.state, reward, done, info
+        
+        for imf in self.immutable_features:
+            if imf in self.dataset.iloc[:, feature_changing].name:
+                return self.state, reward, done, info
 
-        # # age can't decrease
-        # if self.dataset.iloc[:, feature_changing].name == 'age' and decrease:
-        #     return self.state, reward, done, info
+        # age can't decrease
+        if self.dataset.iloc[:, feature_changing].name == 'age' and decrease:
+            return self.state, reward, done, info
 
-        # # Education can't decrease
-        # elif self.dataset.iloc[:, feature_changing].name == 'education' and decrease:
-        #     return self.state, reward, done, info
+        # Education can't decrease
+        elif self.dataset.iloc[:, feature_changing].name == 'education' and decrease:
+            return self.state, reward, done, info
 
-        # # Increasing Education causes age to increase
-        # elif self.dataset.iloc[:, feature_changing].name == 'education' and (not decrease):
-        #     age_index = self.dataset.columns.get_loc("age")
-        #     # print(age_index, "SEE")
-        #     # df['age'].min() = 17; df['age'].max() = 90; 2,3,4 scaled in this range:
-        #     # value_2 = 2*(2 / 73) = 0.054794
-        #     # value_3 = 2*(3 / 73) = 0.082192
-        #     # value_4 = 2*(4 / 73) = 0.109589
-        #     # With each increase in education level, we increase age by avg of 2 as increase of 0.05 is less than increase of 1 degree as 16 degrees are split in 20 points. 
-        #     self.state[age_index] += 0.054794
-        #     # return self.state, reward, done, info
+        # Increasing Education causes age to increase
+        elif self.dataset.iloc[:, feature_changing].name == 'education' and (not decrease):
+            age_index = self.dataset.columns.get_loc("age")
+            # print(age_index, "SEE")
+            # df['age'].min() = 17; df['age'].max() = 90; 2,3,4 scaled in this range:
+            # value_2 = 2*(2 / 73) = 0.054794
+            # value_3 = 2*(3 / 73) = 0.082192
+            # value_4 = 2*(4 / 73) = 0.109589
+            # With each increase in education level, we increase age by avg of 2 as increase of 0.05 is less than increase of 1 degree as 16 degrees are split in 20 points. 
+            self.state[age_index] += 0.054794
+            # return self.state, reward, done, info
 
         action_ = amount
         next_state = list(copy.deepcopy(self.state))
@@ -241,19 +242,23 @@ if __name__ == "__main__":
     # drop_ = ['target','Purpose','Other-debtors','Other-installment-plans','Housing','Telephone','Present-employment-since','Present-residence-since','Property','Savings-account','Number-of-existing-credits','Insatllment-rate','Foreign-worker','Checking-account']
     # X = dataset.drop(columns=[*drop_])
     # X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.20, random_state=5)
+    st = time.time()
     x = AdultIncome01()
-
+    t1 = time.time()
     # X_train_ = scaler.transform(X_train)
     # X_test_ = scaler.transform(X_test)
     # import ipdb; ipdb.set_trace()
-    print(x.state)
+    # print(x.state)
     print(x.step(5))
-    print(x.observation_space.shape)
+    # print(x.observation_space.shape)
     print(x.step(7))
     print(x.step(9))
     print(x.step(6))
     print(x.step(7))
     print(x.step(13))
     # import ipdb; ipdb.set_trace()
-    print(x.observation_space.sample())
-    print(x.state)
+    # print(x.observation_space.sample())
+    t2 = time.time()
+    # print(x.state)
+    print(t1 - st)
+    print(t2 - t1)

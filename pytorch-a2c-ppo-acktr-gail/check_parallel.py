@@ -16,19 +16,23 @@ def run_command(problem, lambda_, gamma, num_steps, lr, clip):
     # German 5 is the setting with constraints on immutable features, age, and job, with lambda. 
     # os.system(f"python -W ignore main.py --algo ppo --use-gae --lr {lr} --clip-param {clip} --value-loss-coef 0.5 --num-processes 1 --num-steps {num_steps} --num-mini-batch 4 --log-interval 50 --use-linear-lr-decay --entropy-coef 0.01 --save-dir './trained_models/ppo/german5_sampletrain_search_{var}' --env-name 'gym_midline:{problem}-v{lambda_}' --num-env-steps 5000000 --save-interval 5000 --gamma {gamma}")
     # os.system(f"python -W ignore main.py --algo ppo --use-gae --lr {lr} --clip-param {clip} --value-loss-coef 0.5 --num-processes 1 --num-steps {num_steps} --num-mini-batch 4 --log-interval 50 --use-linear-lr-decay --entropy-coef 0.01 --save-dir './trained_models/ppo/german5_onehot_sampletrain_search_{var}' --env-name 'gym_midline:{problem}-v{lambda_}' --num-env-steps 5000000 --save-interval 5000 --gamma {gamma}")
-    os.system(f"python -W ignore main.py --algo ppo --use-gae --lr {lr} --clip-param {clip} --value-loss-coef 0.5 --num-processes 1 --num-steps {num_steps} --num-mini-batch 4 --log-interval 50 --use-linear-lr-decay --entropy-coef 0.01 --save-dir './trained_models/ppo/german5_onehot_contiaction_sampletrain_search_{var}' --env-name 'gym_midline:{problem}-v{lambda_}' --num-env-steps 10000000 --save-interval 5000 --gamma {gamma} --eval")
+    # os.system(f"python -W ignore main.py --algo ppo --use-gae --lr {lr} --clip-param {clip} --value-loss-coef 0.5 --num-processes 1 --num-steps {num_steps} --num-mini-batch 4 --log-interval 50 --use-linear-lr-decay --entropy-coef 0.01 --save-dir './trained_models/ppo/german5_onehot_contiaction_sampletrain_search_{var}' --env-name 'gym_midline:{problem}-v{lambda_}' --num-env-steps 10000000 --save-interval 5000 --gamma {gamma} --eval")
+    
+    # Adult
+    os.system(f"python -W ignore main.py --algo ppo --use-gae --lr {lr} --clip-param {clip} --value-loss-coef 0.5 --num-processes 1 --num-steps {num_steps} --num-mini-batch 4 --log-interval 50 --use-linear-lr-decay --entropy-coef 0.01 --save-dir './trained_models/ppo/adult_sampletrain_search_{var}' --env-name 'gym_midline:{problem}-v{lambda_}' --num-env-steps 10000000 --save-interval 5000 --gamma {gamma}")
 
 
 # problem = ["trapezium"]
 # problem = ["step"]
 # problem = ["sine"]
-problem = ["german"]
+# problem = ["german"]
+problem = ["adult"]
 # lambdas = ["01", "1", "10", "100", "1000", "10000"]
 lambdas = ["0", "01", "1", "10", "100"]
 gamma = [0.99]
 clip = [0.05, 0.1, 0.2]
 num_steps = [128, 256]
-lr = [1e-3, 1e-4, 1e-5]
+lr = [1e-3, 1e-4]
 
 # lambdas = ["01"]
 # gamma = [0.99]

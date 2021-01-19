@@ -21,7 +21,7 @@ from evaluation import evaluate
 
 
 def main():
-
+    print("hello1")
     args = get_args()
 
     torch.manual_seed(args.seed)
@@ -41,13 +41,14 @@ def main():
     st = time.time()
     envs = make_vec_envs(args.env_name, args.seed, args.num_processes,
                          args.gamma, args.log_dir, device, False)
-
+    print("hello2")
     actor_critic = Policy(
         envs.observation_space.shape,
         envs.action_space,
         base_kwargs={'recurrent': args.recurrent_policy})
+    # print("hello3")
     actor_critic.to(device)
-
+    # print("hello4")
     if args.algo == 'a2c':
         agent = algo.A2C_ACKTR(
             actor_critic,
@@ -93,7 +94,7 @@ def main():
     rollouts = RolloutStorage(args.num_steps, args.num_processes,
                               envs.observation_space.shape, envs.action_space,
                               actor_critic.recurrent_hidden_state_size)
-
+    # print("hello2222")
     if args.eval:
         # import ipdb; ipdb.set_trace()
         if args.env_name == "gym_midline:midline-v0":
@@ -187,7 +188,7 @@ def main():
     obs, _ = envs.reset()
     rollouts.obs[0].copy_(obs)
     rollouts.to(device)
-
+    print("hello3")
     episode_rewards = deque(maxlen=10)
 
     start = time.time()
@@ -201,8 +202,9 @@ def main():
             utils.update_linear_schedule(
                 agent.optimizer, j, num_updates,
                 agent.optimizer.lr if args.algo == "acktr" else args.lr)
-        t2 = time.time()
-        for step in range(args.num_steps):
+        
+        # t2 = time.time()
+        for step in range(args.num_steps):    
             # Sample actions
             with torch.no_grad():
                 value, action, action_log_prob, recurrent_hidden_states = actor_critic.act(
@@ -224,9 +226,9 @@ def main():
                  for info in infos])
             rollouts.insert(obs, recurrent_hidden_states, action,
                             action_log_prob, value, reward, masks, bad_masks)
-
-        print(time.time() - t2, "IN LOOP", j)
-
+        
+        # print(time.time() - t2, "IN LOOP", j)
+        
         with torch.no_grad():
             next_value = actor_critic.get_value(
                 rollouts.obs[-1], rollouts.recurrent_hidden_states[-1],
@@ -281,7 +283,7 @@ def main():
                         np.max(episode_rewards), dist_entropy, value_loss,
                         action_loss))
 
-        if (args.eval_interval is not None and len(episode_rewards) > 1
+        if (args.eval_interval is not None and len(episode_rewards) > 10
                 and j % args.eval_interval == 0):
             ob_rms = utils.get_vec_normalize(envs).ob_rms
             evaluate(actor_critic, ob_rms, args.env_name, args.seed,

@@ -6,7 +6,7 @@ from a2c_ppo_acktr.envs import make_vec_envs
 import sys, time, os
 sys.path.append("/scratch/vsahil/RL-for-Counterfactuals/paper_expts/")
 # import classifier_german as classifier
-debug = False
+debug = True
 
 
 def plot_trajectories(env_name, env, args, trajectories):
@@ -67,7 +67,7 @@ def return_counterfactual(obs_original, obs, eval_recurrent_hidden_states, eval_
     path = [obs_original[0]]
     max_steps = 200
     if args.eval:
-        max_steps = 200
+        max_steps = 50
     knn_distances = 0
     env_ = eval_envs.venv.venv.envs[0].env
     # print("Starting: ", obs_original)
@@ -82,7 +82,7 @@ def return_counterfactual(obs_original, obs, eval_recurrent_hidden_states, eval_
 
         # Obser reward and next obs
         obs, reward, done, infos, obs_original = eval_envs.step(action)
-        if "german" in env_name:
+        if ("german" in env_name) or ("adult" in env_name) or ("default" in env_name):
             knn_distances += env_.distance_to_closest_k_points(obs_original)
         # print(obs)
         # original = obs * np.sqrt(ob_rms.var + args.eps) + ob_rms.mean
@@ -165,9 +165,9 @@ def evaluate(actor_critic, ob_rms, env_name, seed, num_processes, eval_log_dir,
     eval_episode_rewards = []
     episodes = 3
     st = time.time()
-    if "german" in env_name and args.eval:
+    if args.eval and ("german" in env_name) or ("adult" in env_name) or ("default" in env_name):
         episodes = len(eval_envs.venv.venv.envs[0].env.undesirable_x)
-
+    # episodes = 3
     trajectories = []
     knn_dist = 0
     correct = 0
@@ -182,7 +182,7 @@ def evaluate(actor_critic, ob_rms, env_name, seed, num_processes, eval_log_dir,
             num_processes, actor_critic.recurrent_hidden_state_size, device=device)
         eval_masks = torch.zeros(num_processes, 1, device=device)
         path, reward, done, knn_distances = return_counterfactual(obs_original, obs, eval_recurrent_hidden_states, eval_masks, actor_critic, eval_envs, device, episode, env_name, args)
-        if "german" in env_name and args.eval:
+        if args.eval and ("german" in env_name) or ("adult" in env_name) or ("default" in env_name):
             if done:
                 correct += 1
                 trajectories.append(len(path))
@@ -195,7 +195,7 @@ def evaluate(actor_critic, ob_rms, env_name, seed, num_processes, eval_log_dir,
     eval_envs.close()
     # import ipdb; ipdb.set_trace()
 
-    if "german" in env_name and args.eval:
+    if args.eval and ("german" in env_name) or ("adult" in env_name) or ("default" in env_name):
         print(f"Time: {time.time() - st}")
         lambda_ = env_name.split("v")[-1]
         # print(lambda_, args.gamma, args.num_steps, args.lr, args.clip_param)
@@ -206,10 +206,11 @@ def evaluate(actor_critic, ob_rms, env_name, seed, num_processes, eval_log_dir,
         # with open("correct_german_sampletrain.txt", "a") as f:
         # with open("correct_german_onehot_sampletrain.txt", "a") as f:
         # with open("correct_german_onehot_contiaction_sampletrain.txt", "a") as f:
+        # with open("correct_adult_sampletrain.txt", "a") as f:
         #     if correct > 0:
         #         print(f"Setting:{var}, Correct: {correct}, KNN: {knn_dist/correct:.2f}, Path: {np.mean(np.array(trajectories)):.2f}", file=f)
         #     else:
-        #         print(f"Setting:{var}, Correct: {correct}, KNN: None, Path: None", file=f)
+        #         print(f"Setting:{var}, Correct: {correct}, KNN: 0, Path: 0", file=f)
 
         print(f"Setting:{var}, Correct: {correct}")
         print(f"Avg. KNN Distance: {knn_dist/correct:.2f}")

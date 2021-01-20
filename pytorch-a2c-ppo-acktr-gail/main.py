@@ -38,7 +38,7 @@ def main():
 
     torch.set_num_threads(1)
     device = torch.device("cuda:0" if args.cuda else "cpu")
-    st = time.time()
+    # st = time.time()
     envs = make_vec_envs(args.env_name, args.seed, args.num_processes,
                          args.gamma, args.log_dir, device, False)
     print("hello2")
@@ -173,6 +173,14 @@ def main():
                 num_episodes = 0     # 234374
             elif args.num_steps == 256:
                 num_episodes = 0     # 117186
+            else:
+                raise NotImplementedError
+
+        elif 'adult' in args.save_dir and args.env_name in ['gym_midline:adult-v0', 'gym_midline:adult-v01', 'gym_midline:adult-v1', 'gym_midline:adult-v10', 'gym_midline:adult-v100']:
+            if args.num_steps == 128:
+                num_episodes = 78124     # 75000
+            elif args.num_steps == 256:
+                num_episodes = 39061     # 35000
             else:
                 raise NotImplementedError
 

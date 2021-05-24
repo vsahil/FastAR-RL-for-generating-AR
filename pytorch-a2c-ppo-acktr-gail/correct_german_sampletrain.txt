@@ -1,10 +1,10 @@
 Setting:0_0.99_256_0.001_0.1, Correct: 248, KNN: 0.33, Path: 14.41
-Setting:0_0.99_256_0.001_0.2, Correct: 247, KNN: 0.32, Path: 13.89
+Setting:0_0.99_256_0.001_0.2, Correct: 247, KNN: 0.32, Path: 13.89     # (lowest KNN, highest proximity)
 Setting:0_0.99_128_0.001_0.1, Correct: 245, KNN: 0.33, Path: 14.37
 Setting:0_0.99_128_0.001_0.2, Correct: 245, KNN: 0.34, Path: 14.77
 Setting:0_0.99_256_0.001_0.05, Correct: 245, KNN: 0.36, Path: 15.33
 Setting:0_0.99_128_0.001_0.05, Correct: 244, KNN: 0.35, Path: 15.03
-Setting:0_0.99_256_0.0001_0.1, Correct: 251, KNN: 0.38, Path: 16.35
+Setting:0_0.99_256_0.0001_0.1, Correct: 251, KNN: 0.38, Path: 16.35     # (highest validity - used in paper)
 Setting:0_0.99_128_0.0001_0.2, Correct: 248, KNN: 0.37, Path: 15.81
 Setting:0_0.99_128_0.0001_0.1, Correct: 249, KNN: 0.39, Path: 16.54
 Setting:0_0.99_128_0.0001_0.05, Correct: 243, KNN: 0.35, Path: 14.83
@@ -19,13 +19,13 @@ Setting:0_0.99_256_1e-05_0.1, Correct: 241, KNN: 0.45, Path: 19.16
 Setting:0_0.99_256_1e-05_0.05, Correct: 244, KNN: 0.48, Path: 20.36
 
 
-Setting:01_0.99_256_0.001_0.2, Correct: 250, KNN: 0.34, Path: 14.44
+Setting:01_0.99_256_0.001_0.2, Correct: 250, KNN: 0.34, Path: 14.44     # (highest validity - used in paper)
 Setting:01_0.99_128_0.001_0.05, Correct: 247, KNN: 0.34, Path: 14.57
 Setting:01_0.99_128_0.001_0.2, Correct: 248, KNN: 0.35, Path: 14.85
 Setting:01_0.99_128_0.0001_0.2, Correct: 247, KNN: 0.37, Path: 15.66
-Setting:01_0.99_256_0.001_0.1, Correct: 244, KNN: 0.32, Path: 13.98
+Setting:01_0.99_256_0.001_0.1, Correct: 244, KNN: 0.32, Path: 13.98     # (lowest KNN, highest proximity)
 Setting:01_0.99_256_0.001_0.05, Correct: 245, KNN: 0.34, Path: 14.54
-Setting:01_0.99_256_0.0001_0.1, Correct: 247, KNN: 0.37, Path: 15.94
+Setting:01_0.99_256_0.0001_0.1, Correct: 247, KNN: 0.37, Path: 15.94        # used for example
 Setting:01_0.99_128_0.0001_0.1, Correct: 247, KNN: 0.38, Path: 16.21
 Setting:01_0.99_128_0.001_0.1, Correct: 242, KNN: 0.33, Path: 14.09
 Setting:01_0.99_256_0.0001_0.2, Correct: 247, KNN: 0.43, Path: 18.32
@@ -40,11 +40,13 @@ Setting:01_0.99_256_1e-05_0.2, Correct: 238, KNN: 0.45, Path: 19.20
 Setting:01_0.99_256_1e-05_0.1, Correct: 236, KNN: 0.44, Path: 18.65
 
 
-Setting:1_0.99_256_0.0001_0.1, Correct: 250, KNN: 0.39, Path: 16.61
+Setting:1_0.99_256_0.0001_0.1, Correct: 250, KNN: 0.39, Path: 16.61     # (highest validity)
 Setting:1_0.99_128_0.0001_0.1, Correct: 248, KNN: 0.37, Path: 15.93
 Setting:1_0.99_128_0.0001_0.2, Correct: 248, KNN: 0.36, Path: 15.58
 Setting:1_0.99_128_0.0001_0.05, Correct: 248, KNN: 0.37, Path: 15.61
-Setting:1_0.99_128_0.001_0.2, Correct: 245, KNN: 0.33, Path: 14.20
+
+Setting:1_0.99_128_0.001_0.2, Correct: 245, KNN: 0.33, Path: 14.20  # (used in paper)
+
 Setting:1_0.99_256_0.001_0.2, Correct: 242, KNN: 0.32, Path: 13.80
 Setting:1_0.99_128_0.001_0.05, Correct: 243, KNN: 0.33, Path: 14.37
 Setting:1_0.99_128_0.001_0.1, Correct: 242, KNN: 0.32, Path: 13.91
@@ -74,7 +76,7 @@ Setting:10_0.99_128_0.0001_0.2, Correct: 26, KNN: 0.50, Path: 20.85
 Setting:10_0.99_128_0.0001_0.1, Correct: 27, KNN: 0.49, Path: 20.59
 Setting:10_0.99_128_0.001_0.2, Correct: 0, KNN: 0.0, Path: 0.00
 Avg. above = 57.4 (much better than sampling full space - 40.5)
-Setting:10_0.99_128_1e-05_0.1, Correct: 207, KNN: 0.38, Path: 16.21
+Setting:10_0.99_128_1e-05_0.1, Correct: 207, KNN: 0.38, Path: 16.21     # (highest validity - used in paper)
 Setting:10_0.99_256_1e-05_0.05, Correct: 187, KNN: 0.38, Path: 16.10
 Setting:10_0.99_128_1e-05_0.2, Correct: 22, KNN: 0.21, Path: 9.59
 Setting:10_0.99_256_1e-05_0.2, Correct: 107, KNN: 0.28, Path: 12.28
@@ -98,7 +100,7 @@ Avg. above = 47 (much better than sampling full space - 31.3)
 Setting:100_0.99_256_1e-05_0.2, Correct: 10, KNN: 0.23, Path: 10.20
 Setting:100_0.99_128_1e-05_0.05, Correct: 29, KNN: 0.20, Path: 9.10
 Setting:100_0.99_256_1e-05_0.1, Correct: 107, KNN: 0.29, Path: 12.43
-Setting:100_0.99_128_1e-05_0.1, Correct: 136, KNN: 0.41, Path: 17.25
+Setting:100_0.99_128_1e-05_0.1, Correct: 136, KNN: 0.41, Path: 17.25     # (highest validity - used in paper)
 Setting:100_0.99_256_1e-05_0.05, Correct: 84, KNN: 0.35, Path: 14.85
 Setting:100_0.99_128_1e-05_0.2, Correct: 22, KNN: 0.20, Path: 8.82
 

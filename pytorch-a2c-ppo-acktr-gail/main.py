@@ -184,6 +184,14 @@ def main():
             else:
                 raise NotImplementedError
 
+        elif 'default' in args.save_dir and args.env_name in ['gym_midline:default-v0', 'gym_midline:default-v01', 'gym_midline:default-v1', 'gym_midline:default-v10', 'gym_midline:default-v100']:
+            if args.num_steps == 128:
+                num_episodes = 78124     # 75000
+            elif args.num_steps == 256:
+                num_episodes = 39061     # 35000
+            else:
+                raise NotImplementedError
+
         else:
             raise NotImplementedError
         # print(num_episodes, "SEE")

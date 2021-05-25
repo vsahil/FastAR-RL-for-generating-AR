@@ -1,4 +1,4 @@
-import gym, torch
+import gym, torch, time
 import numpy as np
 import random, itertools, copy, sys, os
 from gym.utils import seeding
@@ -48,13 +48,31 @@ class GermanCredit(gym.Env):
         self.knn_lambda = dist_lambda
         self.knn = NearestNeighbors(n_neighbors=5, p=1)		# 1 would be self, L1 distance makes sense for after normalization. 
         self.knn.fit(scaler.transform(self.dataset))
+        self.numerical_features = [1, 4, 7, 10, 12, 15, 17]
         # self.knn.fit(self.dataset)
         os.environ['SEQ'] = "-1"
         self.undesirable_x = []
         # env_ = eval_envs.venv.venv.envs[0].env
-        for no, i in enumerate(self.dataset.to_numpy()):
-            if classifier.predict_single(i, self.scaler, self.classifier) == 0: # and i.tolist() == [1, 3, 0, 3, 4, 1]:    # [0, 3, 0, 2, 4, 1]: # [1, 3, 0, 3, 4, 1]:
-                self.undesirable_x.append(tuple(i))
+        try:
+            self.undesirable_x = np.load(f"{os.path.dirname(os.path.realpath(__file__))}/../../../../baselines/undesirable_x_german.npy")
+            print("Found")
+        except:
+            print("Not Found")
+            # print(f"{os.path.dirname(os.path.realpath(__file__))}/../../../../baselines/undesirable_x.npy")
+            assert not os.path.exists(f"{os.path.dirname(os.path.realpath(__file__))}/../../../../baselines/undesirable_x_german.npy")
+            undesirable_x = []
+            for no, i in enumerate(self.dataset.to_numpy()):
+                if self.classifier.predict(self.scaler.transform(i.reshape(1, -1))) == 0:
+                # if classifier.predict_single(i, self.scaler, self.classifier) == 0:
+                    undesirable_x.append(tuple(i))
+            # undesirable_x = undesirable_x
+            self.undesirable_x = np.array(undesirable_x)
+            np.save(f"{os.path.dirname(os.path.realpath(__file__))}/../../../../baselines/undesirable_x_german.npy", undesirable_x)
+
+        # for no, i in enumerate(self.dataset.to_numpy()):
+        #     if classifier.predict_single(i, self.scaler, self.classifier) == 0: # and i.tolist() == [1, 3, 0, 3, 4, 1]:    # [0, 3, 0, 2, 4, 1]: # [1, 3, 0, 3, 4, 1]:
+        #         self.undesirable_x.append(tuple(i))
+        
         print(len(self.undesirable_x), "Total points to run the approach on")
         self.reset()
 
@@ -115,6 +133,7 @@ class GermanCredit(gym.Env):
         reward = -10
         done = False
         # if self.dataset.iloc[:, feature_changing].name in self.immutable_features:
+
         # for imf in self.immutable_features:
         #     if imf in self.dataset.iloc[:, feature_changing].name:
         #         return self.state, reward, done, info
@@ -165,7 +184,7 @@ class GermanCredit(gym.Env):
 
     def reset(self):
         seq = int(os.environ['SEQ'])
-        print("SEQ: ", seq)
+        # print("SEQ: ", seq)
         # import ipdb; ipdb.set_trace()
         if len(self.undesirable_x) == 0:
             return
@@ -231,18 +250,23 @@ if __name__ == "__main__":
     # drop_ = ['target','Purpose','Other-debtors','Other-installment-plans','Housing','Telephone','Present-employment-since','Present-residence-since','Property','Savings-account','Number-of-existing-credits','Insatllment-rate','Foreign-worker','Checking-account']
     # X = dataset.drop(columns=[*drop_])
     # X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.20, random_state=5)
+    st = time.time()
     x = GermanCredit01()
+    t1 = time.time()
 
     # X_train_ = scaler.transform(X_train)
     # X_test_ = scaler.transform(X_test)
     # import ipdb; ipdb.set_trace()
-    print(x.state)
+    # print(x.state)
     print(x.step(5))
-    print(x.observation_space.shape)
+    # print(x.observation_space.shape)
     print(x.step(7))
     print(x.step(9))
     print(x.step(1))
     print(x.step(13))
     # import ipdb; ipdb.set_trace()
-    print(x.observation_space.sample())
-    print(x.state)
+    # print(x.observation_space.sample())
+    t2 = time.time()
+    # print(x.state)
+    print(t1 - st)
+    print(t2 - t1)

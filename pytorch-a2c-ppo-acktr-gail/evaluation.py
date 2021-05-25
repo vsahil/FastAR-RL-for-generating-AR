@@ -207,6 +207,7 @@ def evaluate(actor_critic, ob_rms, env_name, seed, num_processes, eval_log_dir,
         # with open("correct_german_onehot_sampletrain.txt", "a") as f:
         # with open("correct_german_onehot_contiaction_sampletrain.txt", "a") as f:
         # with open("correct_adult_sampletrain.txt", "a") as f:
+        # with open("correct_default_sampletrain.txt", "a") as f:
         #     if correct > 0:
         #         print(f"Setting:{var}, Correct: {correct}, KNN: {knn_dist/correct:.2f}, Path: {np.mean(np.array(trajectories)):.2f}", file=f)
         #     else:

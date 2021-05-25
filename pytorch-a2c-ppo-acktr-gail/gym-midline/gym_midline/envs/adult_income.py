@@ -46,22 +46,37 @@ class AdultIncome(gym.Env):
         self.knn_lambda = dist_lambda
         self.knn = NearestNeighbors(n_neighbors=5, p=1)		# 1 would be self, L1 distance makes sense for after normalization. 
         self.knn.fit(scaler.transform(self.dataset))
-        # self.knn.fit(self.dataset)
         os.environ['SEQ'] = "-1"
         self.undesirable_x = []
         # env_ = eval_envs.venv.venv.envs[0].env
         # import ipdb; ipdb.set_trace()
-        for no, i in enumerate(X_test.to_numpy()):
-            if classifier.predict_single(i, self.scaler, self.classifier) == 0:     # and i.tolist() == [1, 3, 0, 3, 4, 1]:    # [0, 3, 0, 2, 4, 1]: # [1, 3, 0, 3, 4, 1]:
-                self.undesirable_x.append(tuple(i))
+        try:
+            # self.undesirable_x = np.load("../baselines/undesirable_x.npy")
+            self.undesirable_x = np.load(f"{os.path.dirname(os.path.realpath(__file__))}/../../../../baselines/undesirable_x_adult.npy")
+            print("Found")
+        except:
+            print("Not Found")
+            # print(f"{os.path.dirname(os.path.realpath(__file__))}/../../../../baselines/undesirable_x.npy")
+            assert not os.path.exists(f"{os.path.dirname(os.path.realpath(__file__))}/../../../../baselines/undesirable_x_adult.npy")
+            undesirable_x = []
+            for no, i in enumerate(X_test.to_numpy()):
+                if self.classifier.predict(self.scaler.transform(i.reshape(1, -1))) == 0:
+                # if classifier.predict_single(i, self.scaler, self.classifier) == 0:
+                    undesirable_x.append(tuple(i))
+            # undesirable_x = undesirable_x
+            self.undesirable_x = np.array(undesirable_x)
+            # np.save("undesirable_x.npy", undesirable_x)
+        # count = 0
+        # for no, i in enumerate(X_test.to_numpy()):
+        #     if self.classifier.predict(self.scaler.transform(i.reshape(1, -1))) == 0:
+        #     # if classifier.predict_single(i, self.scaler, self.classifier) == 0:
+        #         count += 1
+                
         print(len(self.undesirable_x), "Total points to run the approach on")
+        assert len(self.undesirable_x) == 7229
         self.reset()
 
     def model(self):
-        # for discrete state
-        # arr = self.scaler.transform(self.state.reshape(1, -1))
-        # probability_class1 = self.classifier.predict_proba(arr.reshape(1,-1))[0][1]	    # find the probability of belonging to class 1 - 
-
         # for continuous state
         probability_class1 = self.classifier.predict_proba(self.state.reshape(1,-1))[0][1]	    # find the probability of belonging to class 1 - 
         if probability_class1 >= 0.5:
@@ -72,6 +87,7 @@ class AdultIncome(gym.Env):
             return 100, True		# if it is already in good state then very high reward, this should help us get 100% success rate hopefully
         return probability_class1, False
 
+    
     def step(self, action):
         # print(action, type(action), "see")
         # import ipdb; ipdb.set_trace()
@@ -113,30 +129,32 @@ class AdultIncome(gym.Env):
 
         reward = -10
         done = False
-        
-        for imf in self.immutable_features:
-            if imf in self.dataset.iloc[:, feature_changing].name:
-                return self.state, reward, done, info
 
-        # age can't decrease
-        if self.dataset.iloc[:, feature_changing].name == 'age' and decrease:
-            return self.state, reward, done, info
+        # for imf in self.immutable_features:
+        #     if imf in self.dataset.iloc[:, feature_changing].name:
+        #         return self.state, reward, done, info
 
-        # Education can't decrease
-        elif self.dataset.iloc[:, feature_changing].name == 'education' and decrease:
-            return self.state, reward, done, info
+        # # age can't decrease
+        # if self.dataset.iloc[:, feature_changing].name == 'age' and decrease:
+        #     return self.state, reward, done, info
 
-        # Increasing Education causes age to increase
-        elif self.dataset.iloc[:, feature_changing].name == 'education' and (not decrease):
-            age_index = self.dataset.columns.get_loc("age")
-            # print(age_index, "SEE")
-            # df['age'].min() = 17; df['age'].max() = 90; 2,3,4 scaled in this range:
-            # value_2 = 2*(2 / 73) = 0.054794
-            # value_3 = 2*(3 / 73) = 0.082192
-            # value_4 = 2*(4 / 73) = 0.109589
-            # With each increase in education level, we increase age by avg of 2 as increase of 0.05 is less than increase of 1 degree as 16 degrees are split in 20 points. 
-            self.state[age_index] += 0.054794
-            # return self.state, reward, done, info
+        # # Education can't decrease
+        # elif self.dataset.iloc[:, feature_changing].name == 'education' and decrease:
+        #     return self.state, reward, done, info
+
+        # # Increasing Education causes age to increase
+        # elif self.dataset.iloc[:, feature_changing].name == 'education' and (not decrease):
+        #     age_index = self.dataset.columns.get_loc("age")
+        #     # print(age_index, "SEE")
+        #     # df['age'].min() = 17; df['age'].max() = 90; 2,3,4 scaled in this range:
+        #     # value_2 = 2*(2 / 73) = 0.054794
+        #     # value_3 = 2*(3 / 73) = 0.082192
+        #     # value_4 = 2*(4 / 73) = 0.109589
+        #     # With each increase in education level, we increase age by avg of 2 
+        #     # as increase of 0.05 is less than increase of 1 degree as 16 degrees 
+        #     # are split in 20 points. 
+        #     self.state[age_index] += 0.054794
+        #     # return self.state, reward, done, info
 
         action_ = amount
         next_state = list(copy.deepcopy(self.state))
@@ -167,6 +185,7 @@ class AdultIncome(gym.Env):
         # reward, done = self.total_reward()
         return self.state, reward, done, info
 
+    
     def distance_to_closest_k_points(self, state):
         # import ipdb; ipdb.set_trace()
         nearest_dist, nearest_points = self.knn.kneighbors(np.array([state]).reshape(1,-1), self.no_neighbours, return_distance=True)		# we will take the 5 closest points. We don't need 6 here because the input points are not training pts.
@@ -174,6 +193,7 @@ class AdultIncome(gym.Env):
         # print(quantity, nearest_dist)
         return quantity
 
+    
     def reset(self):
         seq = int(os.environ['SEQ'])
         # print("SEQ: ", seq)
@@ -187,7 +207,7 @@ class AdultIncome(gym.Env):
             self.state = self.train_dataset[idx]
         else:
             # This is used during evaluation of a trained agent
-            self.state = self.scaler.transform(np.array(self.undesirable_x[seq]).reshape(1, -1))[0]
+            self.state = self.scaler.transform(self.undesirable_x[seq].reshape(1, -1))[0]
         return self.state
 
     def render(self, mode='human', close=False):
@@ -232,15 +252,9 @@ if __name__ == "__main__":
     import classifier_german as classifier
     # file1 = "/scratch/vsahil/RL-for-Counterfactuals/paper_expts/german_redone.csv"    # 4 is also good
     # clf, dataset, scaler, X_test, X_train = classifier.train_model_adult(file=file1, parameter=1)
-
-    # For discrete states and actions
-
-    # For continuous states and discrete actions
-    # file2 = "/scratch/vsahil/RL-for-Counterfactuals/paper_expts/german_redone.csv"    # 4 is also good
-    # dataset = pd.read_csv(file2)
-    # y = dataset['target']
-    # drop_ = ['target','Purpose','Other-debtors','Other-installment-plans','Housing','Telephone','Present-employment-since','Present-residence-since','Property','Savings-account','Number-of-existing-credits','Insatllment-rate','Foreign-worker','Checking-account']
-    # X = dataset.drop(columns=[*drop_])
+    import ipdb; ipdb.set_trace()
+    file1 = "/scratch/vsahil/RL-for-Counterfactuals/paper_expts/adult_redone.csv"    # 4 is also good
+    # clf, dataset, scaler, X_test, X_train = classifier.train_model_adult(file=file1, parameter=1)
     # X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.20, random_state=5)
     st = time.time()
     x = AdultIncome01()

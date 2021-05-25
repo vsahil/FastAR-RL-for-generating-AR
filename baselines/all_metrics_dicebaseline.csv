@@ -1,0 +1,4 @@
+setting,validity,proximity_cont,proximity_cat,sparsity,manifold,causality,time
+randomgerman,100.0,0.326,0.098,1.93,2.386,93.385,44.79
+kdtreegerman,0.0,nan,nan,nan,nan,nan,43.78
+geneticgerman 98.054 0.671 0.256 6.52 2.387 45.635 440.54

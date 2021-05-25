@@ -24,7 +24,7 @@ class VecNormalize(VecEnvWrapper):
         self.epsilon = epsilon
 
     def step_wait(self):
-        obs_original, rews, news, infos = self.venv.step_wait()
+        obs_original, rews, news, infos = self.venv.step_wait()    # 3
         self.ret = self.ret * self.gamma + rews
         obs_trans = self._obfilt(obs_original)
         if self.ret_rms:

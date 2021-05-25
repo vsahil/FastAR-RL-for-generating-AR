@@ -1,6 +1,7 @@
 import numpy as np
 from .vec_env import VecEnv
 from .util import copy_obs_dict, dict_to_obs, obs_space_info
+import os
 
 class DummyVecEnv(VecEnv):
     """
@@ -48,9 +49,10 @@ class DummyVecEnv(VecEnv):
             # if isinstance(self.envs[e].action_space, spaces.Discrete):
             #    action = int(action)
 
-            obs, self.buf_rews[e], self.buf_dones[e], self.buf_infos[e] = self.envs[e].step(action)
-            if self.buf_dones[e]:
-                obs = self.envs[e].reset()
+            obs, self.buf_rews[e], self.buf_dones[e], self.buf_infos[e] = self.envs[e].step(action)     # 4 
+            if self.buf_dones[e]:       # This resets the state for the last 
+                if not int(os.environ["SEQ"]) > -1:      # Don't do this while in evaluation
+                    obs = self.envs[e].reset()
             self._save_obs(e, obs)
         return (self._obs_from_buf(), np.copy(self.buf_rews), np.copy(self.buf_dones),
                 self.buf_infos.copy())

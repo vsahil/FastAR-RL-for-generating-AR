@@ -39,62 +39,7 @@ def main():
     torch.set_num_threads(1)
     device = torch.device("cuda:0" if args.cuda else "cpu")
     # st = time.time()
-    envs = make_vec_envs(args.env_name, args.seed, args.num_processes,
-                         args.gamma, args.log_dir, device, False)
-    print("hello2")
-    actor_critic = Policy(
-        envs.observation_space.shape,
-        envs.action_space,
-        base_kwargs={'recurrent': args.recurrent_policy})
-    # print("hello3")
-    actor_critic.to(device)
-    # print("hello4")
-    if args.algo == 'a2c':
-        agent = algo.A2C_ACKTR(
-            actor_critic,
-            args.value_loss_coef,
-            args.entropy_coef,
-            lr=args.lr,
-            eps=args.eps,
-            alpha=args.alpha,
-            max_grad_norm=args.max_grad_norm)
-    elif args.algo == 'ppo':
-        agent = algo.PPO(
-            actor_critic,
-            args.clip_param,
-            args.ppo_epoch,
-            args.num_mini_batch,
-            args.value_loss_coef,
-            args.entropy_coef,
-            lr=args.lr,
-            eps=args.eps,
-            max_grad_norm=args.max_grad_norm)
-    elif args.algo == 'acktr':
-        agent = algo.A2C_ACKTR(
-            actor_critic, args.value_loss_coef, args.entropy_coef, acktr=True)
-
-    if args.gail:
-        assert len(envs.observation_space.shape) == 1
-        discr = gail.Discriminator(
-            envs.observation_space.shape[0] + envs.action_space.shape[0], 100,
-            device)
-        file_name = os.path.join(
-            args.gail_experts_dir, "trajs_{}.pt".format(
-                args.env_name.split('-')[0].lower()))
-
-        expert_dataset = gail.ExpertDataset(
-            file_name, num_trajectories=4, subsample_frequency=20)
-        drop_last = len(expert_dataset) > args.gail_batch_size
-        gail_train_loader = torch.utils.data.DataLoader(
-            dataset=expert_dataset,
-            batch_size=args.gail_batch_size,
-            shuffle=True,
-            drop_last=drop_last)
-
-    rollouts = RolloutStorage(args.num_steps, args.num_processes,
-                              envs.observation_space.shape, envs.action_space,
-                              actor_critic.recurrent_hidden_state_size)
-    # print("hello2222")
+    
     if args.eval:
         # import ipdb; ipdb.set_trace()
         if args.env_name == "gym_midline:midline-v0":
@@ -191,18 +136,76 @@ def main():
         actor_critic, ob_rms = torch.load(save_path)
         actor_critic.eval()
         evaluate(actor_critic, ob_rms, args.env_name, args.seed,
-                     args.num_processes, eval_log_dir, device, args, envs.venv.venv.envs[0].env)
+                     args.num_processes, eval_log_dir, device, args)    #, envs.venv.venv.envs[0].env)
         exit(0)
+
+    envs = make_vec_envs(args.env_name, args.seed, args.num_processes,
+                         args.gamma, args.log_dir, device, False)
+    print("hello2")
+    actor_critic = Policy(
+        envs.observation_space.shape,
+        envs.action_space,
+        base_kwargs={'recurrent': args.recurrent_policy})
+    # print("hello3")
+    actor_critic.to(device)
+    # print("hello4")
+    if args.algo == 'a2c':
+        agent = algo.A2C_ACKTR(
+            actor_critic,
+            args.value_loss_coef,
+            args.entropy_coef,
+            lr=args.lr,
+            eps=args.eps,
+            alpha=args.alpha,
+            max_grad_norm=args.max_grad_norm)
+    elif args.algo == 'ppo':
+        agent = algo.PPO(
+            actor_critic,
+            args.clip_param,
+            args.ppo_epoch,
+            args.num_mini_batch,
+            args.value_loss_coef,
+            args.entropy_coef,
+            lr=args.lr,
+            eps=args.eps,
+            max_grad_norm=args.max_grad_norm)
+    elif args.algo == 'acktr':
+        agent = algo.A2C_ACKTR(
+            actor_critic, args.value_loss_coef, args.entropy_coef, acktr=True)
+
+    if args.gail:
+        assert len(envs.observation_space.shape) == 1
+        discr = gail.Discriminator(
+            envs.observation_space.shape[0] + envs.action_space.shape[0], 100,
+            device)
+        file_name = os.path.join(
+            args.gail_experts_dir, "trajs_{}.pt".format(
+                args.env_name.split('-')[0].lower()))
+
+        expert_dataset = gail.ExpertDataset(
+            file_name, num_trajectories=4, subsample_frequency=20)
+        drop_last = len(expert_dataset) > args.gail_batch_size
+        gail_train_loader = torch.utils.data.DataLoader(
+            dataset=expert_dataset,
+            batch_size=args.gail_batch_size,
+            shuffle=True,
+            drop_last=drop_last)
+
+    rollouts = RolloutStorage(args.num_steps, args.num_processes,
+                              envs.observation_space.shape, envs.action_space,
+                              actor_critic.recurrent_hidden_state_size)
+    # print("hello2222")
+    
     obs, _ = envs.reset()
     rollouts.obs[0].copy_(obs)
     rollouts.to(device)
-    print("hello3")
+    # print("hello3")
     episode_rewards = deque(maxlen=10)
 
     start = time.time()
     num_updates = int(args.num_env_steps) // args.num_steps // args.num_processes
     t1 = time.time()
-    print(t1 - st, "First time")
+    # print(t1 - st, "First time")
     for j in range(num_updates):
 
         if args.use_linear_lr_decay:

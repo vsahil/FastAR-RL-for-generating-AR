@@ -11,6 +11,7 @@ import cal_metrics
 # dataset_dice = helpers.load_adult_income_dataset()
 # d = dice_ml.Data(dataframe=dataset_dice, continuous_features=['age', 'hours_per_week'], outcome_name='income')
 import classifier_german as classifier
+dataset_name = "default"
 dataset_name = "german"      # "adult"
 if dataset_name == "adult":
     file1 = "/scratch/vsahil/RL-for-Counterfactuals/paper_expts/adult_redone.csv"
@@ -26,6 +27,14 @@ elif dataset_name == "german":
     immutable_features = ['Personal-status', 'Number-of-people-being-lible', 'Foreign-worker', 'Purpose']
     non_decreasing_features = ['age', 'Job']
     correlated_features = []
+elif dataset_name == "default":
+    file1 = "/scratch/vsahil/RL-for-Counterfactuals/paper_expts/default_redone.csv"
+    model, dataset, scaler, X_test, X_train = classifier.train_model_default(file=file1, parameter=1, drop=False)
+    continuous_features = ['LIMIT_BAL', 'AGE', 'BILL_AMT1', 'BILL_AMT2', 'BILL_AMT3', 'BILL_AMT4', 'BILL_AMT5', 'BILL_AMT6', 'PAY_AMT1', 'PAY_AMT2', 'PAY_AMT3', 'PAY_AMT4', 'PAY_AMT5', 'PAY_AMT6']
+    immutable_features = ['sex', 'MARRIAGE']
+    non_decreasing_features = ['AGE', 'EDUCATION']
+    correlated_features = [('EDUCATION', 'AGE', 0.027)] 
+
 # X_train_ = scaler.transform(X_train)
 # X_test_ = scaler.transform(X_test)
 
@@ -61,8 +70,9 @@ except:
         if classifier.predict_single(i, scaler, model) == 0:
             undesirable_x.append(tuple(i))
     undesirable_x = np.array(undesirable_x)
+# print(len(undesirable_x), "SEE")
     # np.save(f"undesirable_x_{dataset}.npy", undesirable_x)
-
+# import ipdb; ipdb.set_trace()
 find_cfs_points = pd.DataFrame(undesirable_x, columns=X_test.columns.tolist())
 
 model.predict_probability = model.predict_proba
@@ -89,8 +99,8 @@ features_to_vary = [f for f in X_test.columns.tolist() if f not in immutable_fea
 # import ipdb; ipdb.set_trace()
 assert len(features_to_vary) == len(X_test.columns.tolist()) - len(immutable_features)
 
-num_datapoints = find_cfs_points.shape[0]
-# num_datapoints = 5
+# num_datapoints = find_cfs_points.shape[0]
+num_datapoints = 5
 
 e1, cfs_found = exp.generate_counterfactuals(find_cfs_points[:num_datapoints], total_CFs=1, 
         desired_class="opposite", 

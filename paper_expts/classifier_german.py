@@ -47,6 +47,7 @@ def architecture(parameter, dataset, y, drop_, X, random_state, drop=True):
     tn, fp, fn, tp = confusion_matrix(y_train, Y_train_pred).ravel()
     # print(tn + fn)
     # print(tn, fp, fn, tp)
+    # import ipdb; ipdb.set_trace()
     print(random_state, clf.score(X_test_, y_test))
 
 
@@ -89,7 +90,7 @@ def train_model_adult(file=None, parameter=None, drop=True):
     return architecture(parameter, dataset, y, drop_, X, random_state, drop)
 
 
-def train_model_default(file=None, parameter=None):
+def train_model_default(file=None, parameter=None, drop=True):
     if file == None:
         file = "default_redone.csv"  # random_state = 26    # numerical features, not all categorical though
     dataset = pd.read_csv(file)
@@ -101,13 +102,13 @@ def train_model_default(file=None, parameter=None):
     else:
         random_state = int(sys.argv[1])
     
-    return architecture(parameter, dataset, y, drop_, X, random_state)
+    return architecture(parameter, dataset, y, drop_, X, random_state, drop)
 
 
 if __name__ == "__main__":
-    train_model_german()
+    # train_model_german()
     # train_model_adult()
-    # train_model_default()
+    train_model_default()
 
 
 # Full dataset, best hyper-params:

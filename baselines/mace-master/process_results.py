@@ -118,8 +118,14 @@ def prepare_for_cal_metrics(find_cfs_points, final_cfs, setting, time_taken):
 
 
 if __name__ == '__main__':
-    # This is the one with LR
-    result_direc = "_experiments/2021.05.25_12.00.15__german_our__lr__one_norm__MACE_eps_1e-3__batch0__samples10__pid0/"
+
+    # Dummy runs with 10 CFEs each 
+    # result_direc = "_experiments/2021.05.25_12.00.15__german_our__lr__one_norm__MACE_eps_1e-3__batch0__samples10__pid0/"
+    # result_direc = "_experiments/2021.05.25_11.51.26__german_our__forest__one_norm__MACE_eps_1e-3__batch0__samples10__pid0/"
+    
+    # Full runs with CFEs generated for all datapoints
+    # result_direc = "_experiments/2021.05.25_13.44.19__german_our__lr__one_norm__MACE_eps_1e-3__batch0__samples500__pid0/"
+    result_direc = "_experiments/2021.05.25_13.45.10__german_our__forest__one_norm__MACE_eps_1e-3__batch0__samples500__pid0/"
     assert "german" in result_direc     # currently preparing only for german credit dataset. 
     
     normal, cfes = extract_points_from_files(result_direc + "__explanation_log/")

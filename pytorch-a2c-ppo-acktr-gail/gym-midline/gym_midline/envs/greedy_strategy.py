@@ -101,8 +101,9 @@ if "adult" == name:
     correlated_features = [('education', 'age', 0.054)]     # in normalized data the increase is 0.05
     name_dataset = "adult"
 elif "german" == name:
-    numerical_features = x.numerical_features
-    continuous_features = x.dataset.columns[numerical_features].tolist()
+    # numerical_features = x.numerical_features
+    # continuous_features = x.dataset.columns[numerical_features].tolist()
+    continuous_features = ['Months', 'Credit-amount', 'Insatllment-rate', 'Present-residence-since', 'age', 'Number-of-existing-credits', 'Number-of-people-being-lible']
     immutable_features = ['Personal-status', 'Number-of-people-being-lible', 'Foreign-worker', 'Purpose']
     non_decreasing_features = ['age', 'Job']
     correlated_features = []

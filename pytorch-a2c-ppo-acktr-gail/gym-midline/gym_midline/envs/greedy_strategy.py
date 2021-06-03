@@ -12,7 +12,7 @@ random.seed(42)
 import pandas as pd
 
 
-name = "german"
+name = "default"
 if name == "german":
     x = GR.GermanCredit01()
 elif name == "adult":
@@ -107,7 +107,14 @@ elif "german" == name:
     non_decreasing_features = ['age', 'Job']
     correlated_features = []
     name_dataset = "german"
+elif "default" == name:
+    continuous_features = ['LIMIT_BAL', 'AGE', 'BILL_AMT1', 'BILL_AMT2', 'BILL_AMT3', 'BILL_AMT4', 'BILL_AMT5', 'BILL_AMT6', 'PAY_AMT1', 'PAY_AMT2', 'PAY_AMT3', 'PAY_AMT4', 'PAY_AMT5', 'PAY_AMT6']
+    immutable_features = ['sex', 'MARRIAGE']
+    non_decreasing_features = ['AGE', 'EDUCATION']
+    correlated_features = [('EDUCATION', 'AGE', 0.027)]     # in normalized data the increase is 0.027
+    name_dataset = "default"
 # print(continuous_features)
+
 
 normalized_mads = {}
 dataset = x.scaler.transform(x.dataset)
@@ -122,4 +129,3 @@ find_cfs_points = pd.DataFrame(find_cfs_points, columns=x.dataset.columns.tolist
 cal_metrics.calculate_metrics("baseline", final_cfs, cfs_found, find_cfs_points, x.classifier, x.dataset,
     x.knn, continuous_features, normalized_mads, 
     immutable_features, non_decreasing_features, correlated_features, x.scaler, "greedy" + name, time_taken, save=False)
-print("done")

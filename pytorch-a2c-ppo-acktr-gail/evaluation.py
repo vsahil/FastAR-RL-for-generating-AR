@@ -161,7 +161,8 @@ def evaluate(actor_critic, ob_rms, env_name, seed, num_processes, eval_log_dir,
     #     normalized_mads[feature] = np.median(abs(dataset[feature].values - np.median(dataset[feature].values)))
 
     num_datapoints = episodes
-    num_datapoints = 3
+    print(episodes, "EPISDO")
+    # num_datapoints = 3
     st = time.time()
     # This loop can be parallelized using joblib
     for episode in range(num_datapoints):
@@ -247,15 +248,24 @@ def evaluate(actor_critic, ob_rms, env_name, seed, num_processes, eval_log_dir,
             non_decreasing_features = ['age', 'Job']
             correlated_features = []
             name_dataset = "german"
+        elif "default" in env_name:
+            # numerical_features = env_.numerical_features
+            # continuous_features = env_.dataset.columns[numerical_features].tolist()
+            continuous_features = ['LIMIT_BAL', 'AGE', 'BILL_AMT1', 'BILL_AMT2', 'BILL_AMT3', 'BILL_AMT4', 'BILL_AMT5', 'BILL_AMT6', 'PAY_AMT1', 'PAY_AMT2', 'PAY_AMT3', 'PAY_AMT4', 'PAY_AMT5', 'PAY_AMT6']
+            immutable_features = ['sex', 'MARRIAGE']
+            non_decreasing_features = ['AGE', 'EDUCATION']
+            correlated_features = [('EDUCATION', 'AGE', 0.027)]     # in normalized data the increase is 0.027
+            name_dataset = "default"
 
         normalized_mads = {}
         for feature in continuous_features:
             normalized_mads[feature] = np.median(abs(dataset[feature].values - np.median(dataset[feature].values)))
         # Adult: {'age': 0.2739726027397258, 'fnlwgt': 0.08197802435899859, 'capitalgain': 0.0, 'capitalloss': 0.0, 'hoursperweek': 0.061224489795918324}
         # German: {'Months': 0.17647058823529416, 'Credit-amount': 0.12077693408165513, 'Insatllment-rate': 0.6666666666666665, 'Present-residence-since': 0.6666666666666665, 'age': 0.2500000000000001, 'Number-of-existing-credits': 0.0, 'Number-of-people-being-lible': 0.0}
+        # Default: {'LIMIT_BAL': 0.18181818181818188, 'AGE': 0.22222222222222232, 'BILL_AMT1': 0.03858184871837744, 'BILL_AMT2': 0.03949860872272015, 'BILL_AMT3': 0.02284255575613059, 'BILL_AMT4': 0.03514741151446976, 'BILL_AMT5': 0.03507865603046101, 'BILL_AMT6': 0.025751824952142788, 'PAY_AMT1': 0.0076514851485148805, 'PAY_AMT2': 0.002364244454089337, 'PAY_AMT3': 0.00400651756618009, 'PAY_AMT4': 0.0056721819182185, 'PAY_AMT5': 0.007033519408996769, 'PAY_AMT6': 0.005674660371576712}
         final_cfs = pd.DataFrame(final_cfs, columns=env_.dataset.columns.tolist())
         find_cfs_points = pd.DataFrame(find_cfs_points, columns=env_.dataset.columns.tolist())
-        # print(normalized_mads, "see")
+        # print(normalized_mads, "see", continuous_features)
         cal_metrics.calculate_metrics(method + name_dataset, final_cfs, cfs_found, find_cfs_points, env_.classifier, env_.dataset,
             env_.knn, continuous_features, normalized_mads, 
             immutable_features, non_decreasing_features, correlated_features, env_.scaler, var, time_taken, save=False)

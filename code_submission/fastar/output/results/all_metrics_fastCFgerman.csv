@@ -1,0 +1,2 @@
+setting,num_episodes,train_time,validity,proximity_cont,proximity_cat,sparsity,manifold,causality,time
+01_0.99_256_0.001_0.2,19530,0,97.276,0.1,0.063,1.22,0.721,100.0,15.68

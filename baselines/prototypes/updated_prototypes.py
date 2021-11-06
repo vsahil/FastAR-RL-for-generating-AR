@@ -25,17 +25,34 @@ print('Eager execution enabled: ', tf.executing_eagerly()) # False
 import sys
 sys.path.append("../../")
 import classifier_dataset as classifier
-dataset_name = "adult"
+dataset_name = sys.argv[1]
 
-if dataset_name == "adult":
+if dataset_name == "german":
+    dataset, scaler, X_test, X_train, y_train, y_test = classifier.train_model_german(parameter=3)
+    continuous_features = ['Months', 'Credit-amount', 'Insatllment-rate', 'Present-residence-since', 'age', 'Number-of-existing-credits', 'Number-of-people-being-lible']
+    immutable_features = ['Personal-status', 'Number-of-people-being-lible', 'Foreign-worker', 'Purpose']
+    non_decreasing_features = ['age', 'Job']
+    correlated_features = []
+    epochs = 100
+
+elif dataset_name == "adult":
     dataset, scaler, X_test, X_train, y_train, y_test = classifier.train_model_adult(parameter=3)
-    X_train_ = scaler.transform(X_train)
-    X_test_ = scaler.transform(X_test)
     continuous_features = ['age', 'fnlwgt', 'capitalgain', 'capitalloss', 'hoursperweek']
     immutable_features = ['marital-status', 'race', 'native-country', 'sex']
     non_decreasing_features = ['age', 'education']
     correlated_features = [('education', 'age', 0.054)]     # With each increase in level of education, we increase the age by 2. 
+    epochs = 25
 
+elif dataset_name == "default":
+    dataset, scaler, X_test, X_train, y_train, y_test = classifier.train_model_default(parameter=3)
+    continuous_features = ['LIMIT_BAL', 'AGE', 'BILL_AMT1', 'BILL_AMT2', 'BILL_AMT3', 'BILL_AMT4', 'BILL_AMT5', 'BILL_AMT6', 'PAY_AMT1', 'PAY_AMT2', 'PAY_AMT3', 'PAY_AMT4', 'PAY_AMT5', 'PAY_AMT6']
+    immutable_features = ['sex', 'MARRIAGE']
+    non_decreasing_features = ['AGE', 'EDUCATION']
+    correlated_features = [('EDUCATION', 'AGE', 0.027)]   # the increase in unnormalized form is much higher. 
+    epochs = 10
+
+X_train_ = scaler.transform(X_train)
+X_test_ = scaler.transform(X_test)
 
 def set_seed(s=0):
     np.random.seed(s)
@@ -76,9 +93,9 @@ def nn_ord():
     return nn
 
 
-def our_model():
+def our_model(input_dim):
     model = Sequential()
-    model.add(Dense(5, input_dim=13, activation='relu'))
+    model.add(Dense(5, input_dim=input_dim, activation='relu'))
     model.add(Dense(3, activation='relu'))
     # model.add(Dense(1, activation='sigmoid'))
     model.add(Dense(2, activation='softmax'))
@@ -87,8 +104,8 @@ def our_model():
 
 
 set_seed()
-nn = our_model()
-nn.fit(X_train_, to_categorical(y_train), epochs=25, batch_size=200)
+nn = our_model(input_dim=X_train_.shape[1])
+nn.fit(X_train_, to_categorical(y_train), epochs=epochs, batch_size=200)
 
 predictions = np.argmax(nn.predict(X_test_), axis=1)
 test_accuracy = sum(predictions == y_test.to_numpy()) * 100.0 / len(y_test)
@@ -129,7 +146,7 @@ start = time.time()
 
 set_seed()
 # As this approach is very expensive to run, I am running it on the first 100 datapoints only.
-num_datapoints = 100
+num_datapoints = 2
 cfs_found = []
 final_cfs = []
 save = True

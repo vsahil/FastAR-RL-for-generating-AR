@@ -21,22 +21,16 @@ def find_proximity_cat(cfe, original_datapoint, categorical_features):
 
 def follows_causality(cfe, original_datapoint, immutable_features, 
         non_decreasing_features, correlated_features, method):
-    # import ipdb; ipdb.set_trace()
     follows = True
     diff = cfe.to_numpy().astype(float) - original_datapoint.to_numpy()
     m2 = (diff != 0)[0].nonzero()
     changed_columns = cfe.columns[m2].tolist()      # m2.index[m2].tolist()
-    if "dice-vae" in method or "MACE" in method:
+    if any(x in method for x in ["dice-vae", "MACE", "CFproto"]):
         if len(set(changed_columns).intersection(set(immutable_features))) > 0:
             follows = False
             return follows
     else:
-        # try:
             assert len(set(changed_columns).intersection(set(immutable_features))) == 0
-        # except:
-            # if "MACE" in method:        # trying to see if causality values match. 
-            #     pass
-    # print(diff, changed_columns)
     
     diff_nondecrease = cfe[non_decreasing_features].to_numpy().astype(float) - original_datapoint[non_decreasing_features].to_numpy()
     # m2 = (diff_nondecrease < 0)
@@ -66,7 +60,8 @@ def find_manifold_dist(cfe, knn):
 def calculate_metrics(method, e1, cfs_found, find_cfs_points, model, dataset, continuous_features, 
                 mads, immutable_features, non_decreasing_features, correlated_features, scaler, time_taken, save=False):
     
-    if not any(x in method for x in ["random", "greedy", "MACE"]):
+    # import ipdb; ipdb.set_trace()
+    if not any(x in method for x in ["random", "greedy", "MACE", "CFproto"]):
         find_cfs_points = pd.DataFrame(scaler.transform(find_cfs_points), columns=dataset.columns.tolist())     # this is same normalized as DiCE does it. 
     knn = NearestNeighbors(n_neighbors=5, p=1)
     transformed_dataset = scaler.transform(dataset)
@@ -89,29 +84,34 @@ def calculate_metrics(method, e1, cfs_found, find_cfs_points, model, dataset, co
         if dt:  # find the metrics only if a cfe was found for a datapoint it was requested for. 
             if "dice-gradient" in method or "dice-vae" in method:
                 cfe = e1[seq].final_cfs_df
-            if any(x in method for x in ["random", "greedy", "MACE"]):
+            if any(x in method for x in ["random", "greedy", "MACE", "CFproto"]):
                 cfe = e1[seq:seq+1]
             else:
                 cfe = e1.cf_examples_list[seq].final_cfs_df
             
-            if not any(x in method for x in ["random", "greedy", "MACE"]):
+            if not any(x in method for x in ["random", "greedy", "MACE", "CFproto"]):
                 cfe = cfe.drop(columns=['target'])
                 cfe = scaler.transform(cfe)
             computed_cfs.append(cfe)
-            if any(x in method for x in ["random", "greedy", "MACE"]):
+            
+            if any(x in method for x in ["random", "greedy", "MACE", "CFproto"]):
                 cfe_prediction = model.predict(cfe)[0]
             else:
                 cfe_prediction = model.orig_predict(cfe)[0]
-            if "dice-vae" in method:
+            
+            if "dice-vae" in method or "CFproto" in method:
                 cfe_prediction = np.argmax(cfe_prediction)
             original_datapoint = find_cfs_points[seq: seq+1]
+            
             if "dice-gradient" in method:
                 original_prediction = model.orig_predict(original_datapoint.to_numpy())[0]
             elif "dice-vae" in method:
                 original_prediction = model.orig_predict(original_datapoint.to_numpy())[0]
                 original_prediction = np.argmax(original_prediction)
-            elif any(x in method for x in ["random", "greedy", "MACE"]):
+            elif any(x in method for x in ["random", "greedy", "MACE", "CFproto"]):
                 original_prediction = model.predict(original_datapoint)[0]
+                if "CFproto" in method:
+                    original_prediction = np.argmax(original_prediction)
             else:
                 original_prediction = model.orig_predict(original_datapoint)[0]
             # print(cfe, cfe_prediction, original_prediction)
@@ -122,7 +122,7 @@ def calculate_metrics(method, e1, cfs_found, find_cfs_points, model, dataset, co
                     pass
                 else:
                     print(seq, "failing as CFE")
-            if not any(x in method for x in ["random", "greedy", "MACE"]):
+            if not any(x in method for x in ["random", "greedy", "MACE", "CFproto"]):
                 cfe = pd.DataFrame(cfe, columns=dataset.columns.tolist())
             proximity_cont, sparsity_cont = find_proximity_cont(cfe, original_datapoint, continuous_features, mads)
             categorical_features = [f for f in dataset.columns.tolist() if f not in continuous_features]

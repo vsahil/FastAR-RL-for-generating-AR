@@ -7,7 +7,6 @@ astunparse==1.6.3
 async-generator==1.10
 attrs==21.2.0
 backcall==0.1.0
--e git+https://github.com/vsahil/RL-for-Counterfactuals.git@a07fa861d45dea054d9835f46460a4d9273ba8a1#egg=baselines&subdirectory=fastar/baselines
 bleach==4.1.0
 blis==0.7.5
 cached-property==1.5.2
@@ -37,7 +36,6 @@ google-pasta==0.2.0
 graphviz==0.13.2
 grpcio==1.41.1
 gym==0.15.7
--e git+https://github.com/vsahil/RL-for-Counterfactuals.git@a07fa861d45dea054d9835f46460a4d9273ba8a1#egg=gym_midline&subdirectory=fastar/gym-midline
 h5py==3.1.0
 huggingface-hub==0.1.1
 idna==3.3

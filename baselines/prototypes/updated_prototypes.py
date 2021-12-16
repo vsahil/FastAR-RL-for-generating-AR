@@ -137,16 +137,22 @@ cf = CounterfactualProto(predict_fn,
                         )
 
 # Fit explainer. Please check the [documentation](https://docs.seldon.io/projects/alibi/en/latest/methods/CFProto.html) for more info about the optional arguments.
+# import ipdb; ipdb.set_trace()
 
 cf.fit(X_train_) #, d_type='abdm', disc_perc=[25, 50, 75]);
 # Find CF for instances with original predictions 0
+if dataset_name == "german":
+    predictions_train = np.argmax(nn.predict(X_train_), axis=1)
+    predictions = np.concatenate((predictions_train, predictions))
 predictions_with_0 = np.where(predictions == 0)[0]
+
+print("DATASET: ", dataset_name, predictions_with_0.shape)
 
 start = time.time()
 
 set_seed()
 # As this approach is very expensive to run, I am running it on the first 100 datapoints only.
-num_datapoints = 2
+num_datapoints = 1000
 cfs_found = []
 final_cfs = []
 save = True
